@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VPIP Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1e2530;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --border: #30363d;
+    --tag-color: #58a6ff;
+    --tp-color: #79c0ff;
+    --lag-color: #f85149;
+    --lp-color: #d29922;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; }
+  .header-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface2); }
+  .icon-btn.danger:hover { background: #3a1212; border-color: var(--red); color: var(--red); }
+
+  /* Tabs */
+  nav {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { flex: 1; overflow-y: auto; }
+  .page { display: none; padding: 14px 16px; }
+  .page.active { display: block; }
+
+  /* ===== TABLE VIEW ===== */
+  .section-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+
+  /* Oval table */
+  .table-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 0.65;
+    margin-bottom: 14px;
+  }
+  .table-felt {
+    position: absolute;
+    inset: 18%;
+    background: radial-gradient(ellipse at center, #1a4a2e 0%, #0f2d1a 100%);
+    border-radius: 50%;
+    border: 4px solid #2a6b3f;
+    box-shadow: 0 0 0 3px #1a4a2e, inset 0 0 30px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .table-label { font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 600; letter-spacing: 1px; }
+
+  /* Seat positions around the oval */
+  .seat {
+    position: absolute;
+    width: 54px;
+    height: 64px;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .seat-inner {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .seat.selected .seat-inner {
+    border-color: var(--accent);
+    background: rgba(88,166,255,0.12);
+    box-shadow: 0 0 10px rgba(88,166,255,0.3);
+  }
+  .seat-num {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+  .seat.selected .seat-num { color: var(--accent); }
+  .seat-vpip {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .seat-hands {
+    font-size: 9px;
+    color: var(--text2);
+    line-height: 1;
+  }
+  .seat-type-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+  }
+
+  /* ===== DETAIL PANEL ===== */
+  .detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .detail-seat-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .detail-name-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 14px;
+    text-align: center;
+    padding: 6px 10px;
+    border-radius: 8px;
+    width: 140px;
+    outline: none;
+  }
+  .detail-name-input:focus { border-color: var(--accent); }
+
+  /* Mini stats row */
+  .mini-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .mini-stat {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+  }
+  .mini-stat-val { font-size: 20px; font-weight: 800; color: var(--accent); }
+  .mini-stat-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; }
+
+  /* Player type */
+  .type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .type-btn {
+    padding: 7px 4px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .type-btn .abbr { font-size: 14px; display: block; }
+  .type-btn .full { font-size: 9px; display: block; margin-top: 1px; }
+  .type-btn.sel-TAG { border-color: var(--tag-color); background: rgba(88,166,255,0.12); color: var(--tag-color); }
+  .type-btn.sel-TP  { border-color: var(--tp-color);  background: rgba(121,192,255,0.12); color: var(--tp-color); }
+  .type-btn.sel-LAG { border-color: var(--lag-color); background: rgba(248,81,73,0.12);   color: var(--lag-color); }
+  .type-btn.sel-LP  { border-color: var(--lp-color);  background: rgba(210,153,34,0.12);  color: var(--lp-color); }
+
+  /* Position chips for current seat */
+  .pos-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .pos-chip {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .pos-chip.active {
+    border-color: var(--accent);
+    background: rgba(88,166,255,0.12);
+    color: var(--accent);
+  }
+
+  /* Action buttons */
+  .action-buttons { display: flex; flex-direction: column; gap: 8px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: opacity 0.1s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { opacity: 0.7; transform: scale(0.97); }
+  .btn-call  { background: #1f6feb; color: #fff; }
+  .btn-raise { background: #2ea043; color: #fff; }
+  .btn-fold  { background: var(--surface2); color: var(--text2); font-size: 14px; border: 1px solid var(--border); }
+
+  /* All seats summary */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .summary-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .summary-card:hover { border-color: var(--accent); }
+  .summary-card.selected { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+  .sc-top { display: flex; justify-content: space-between; align-items: center; }
+  .sc-num { font-size: 18px; font-weight: 800; color: var(--text); }
+  .sc-type { font-size: 10px; font-weight: 700; }
+  .sc-name { font-size: 11px; color: var(--text2); margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sc-vpip { font-size: 22px; font-weight: 800; }
+  .sc-hands { font-size: 10px; color: var(--text2); }
+
+  /* Archives */
+  .archive-list { display: flex; flex-direction: column; gap: 10px; }
+  .archive-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .archive-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .archive-title { font-size: 15px; font-weight: 700; }
+  .archive-date { font-size: 11px; color: var(--text2); }
+  .archive-seats { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .archive-seat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--surface);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .aseat-num { font-weight: 700; color: var(--accent); width: 20px; }
+  .aseat-name { flex: 1; color: var(--text2); }
+  .aseat-type { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
+  .aseat-vpip { font-weight: 700; color: var(--accent); }
+  .aseat-hands { color: var(--text2); font-size: 10px; }
+  .pos-detail { font-size: 10px; color: var(--text2); margin-top: 4px; padding-left: 28px; flex-basis: 100%; }
+  .archive-delete {
+    background: none; border: none; color: var(--text2);
+    cursor: pointer; font-size: 18px; padding: 4px; border-radius: 6px;
+  }
+  .archive-delete:hover { color: var(--red); }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M6 3L2 9l10 12L22 9l-4-6H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg>
+    VPIP
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn danger" onclick="resetTable()">↺ Reset</button>
+    <button class="icon-btn" onclick="saveSession()">✓ Save</button>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" id="tab-table" onclick="showPage('page-table', 'tab-table')">Table</div>
+  <div class="tab" id="tab-summary" onclick="showPage('page-summary', 'tab-summary')">Summary</div>
+  <div class="tab" id="tab-archives" onclick="showPage('page-archives', 'tab-archives')">Archives</div>
+</nav>
+
+<main>
+  <!-- TABLE PAGE -->
+  <div id="page-table" class="page active">
+    <div class="table-wrap" id="tableWrap">
+      <div class="table-felt"><span class="table-label">POKER TABLE</span></div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <div class="detail-seat-num">Seat <span id="detailSeatNum">1</span></div>
+        <input class="detail-name-input" id="detailName" type="text" placeholder="プレイヤー名">
+      </div>
+
+      <div class="mini-stats">
+        <div class="mini-stat">
+          <div class="mini-stat-val" id="detailVpipPct">0%</div>
+          <div class="mini-stat-lbl">VPIP</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val" id="detailHands">0</div>
+          <div class="mini-stat-lbl">Hands</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val" id="detailVpipCount">0</div>
+          <div class="mini-stat-lbl">VPIP count</div>
+        </div>
+      </div>
+
+      <div class="section-label">プレイヤータイプ</div>
+      <div class="type-grid" id="typeGrid">
+        <button class="type-btn" data-type="TAG" onclick="selectType('TAG')">
+          <span class="abbr">TAG</span><span class="full">タイトアグレ</span>
+        </button>
+        <button class="type-btn" data-type="TP" onclick="selectType('TP')">
+          <span class="abbr">TP</span><span class="full">タイトパッシブ</span>
+        </button>
+        <button class="type-btn" data-type="LAG" onclick="selectType('LAG')">
+          <span class="abbr">LAG</span><span class="full">ルースアグレ</span>
+        </button>
+        <button class="type-btn" data-type="LP" onclick="selectType('LP')">
+          <span class="abbr">LP</span><span class="full">ルースパッシブ</span>
+        </button>
+      </div>
+
+      <div class="section-label">ポジション</div>
+      <div class="pos-row" id="posRow"></div>
+
+      <div class="action-buttons">
+        <div class="btn-row">
+          <button class="btn btn-call"  onclick="record('call')">✓ Call</button>
+          <button class="btn btn-raise" onclick="record('raise')">↗ Raise</button>
+        </div>
+        <button class="btn btn-fold" onclick="record('fold')">✕ Fold</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY PAGE -->
+  <div id="page-summary" class="page">
+    <div class="section-label" style="margin-bottom:10px">全シート概要</div>
+    <div class="summary-grid" id="summaryGrid"></div>
+  </div>
+
+  <!-- ARCHIVES PAGE -->
+  <div id="page-archives" class="page">
+    <div id="archiveList" class="archive-list"></div>
+  </div>
+</main>
+
+<script>
+const POSITIONS = ['UTG','UTG+1','MP','HJ','CO','BTN','SB','BB'];
+const TYPE_COLOR = { TAG: 'var(--tag-color)', TP: 'var(--tp-color)', LAG: 'var(--lag-color)', LP: 'var(--lp-color)' };
+const TYPE_JP = { TAG: 'タイトアグレ', TP: 'タイトパッシブ', LAG: 'ルースアグレ', LP: 'ルースパッシブ' };
+const SEAT_COUNT = 9;
+
+// Seat positions around the oval (percentage of container)
+// top, left
+const SEAT_POS = [
+  { top: '8%',  left: '50%'  }, // 1 - top center
+  { top: '18%', left: '82%'  }, // 2 - top right
+  { top: '45%', left: '95%'  }, // 3 - mid right
+  { top: '72%', left: '82%'  }, // 4 - bottom right
+  { top: '88%', left: '64%'  }, // 5 - bottom right-center
+  { top: '88%', left: '36%'  }, // 6 - bottom left-center
+  { top: '72%', left: '18%'  }, // 7 - bottom left
+  { top: '45%', left: '5%'   }, // 8 - mid left
+  { top: '18%', left: '18%'  }, // 9 - top left
+];
+
+function makeSeat() {
+  return {
+    name: '',
+    playerType: null,
+    selectedPos: 'BTN',
+    positions: Object.fromEntries(POSITIONS.map(p => [p, { hands: 0, vpip: 0 }]))
+  };
+}
+
+let state = {
+  selectedSeat: 1,
+  seats: Object.fromEntries(
+    Array.from({ length: SEAT_COUNT }, (_, i) => [i + 1, makeSeat()])
+  )
+};
+
+let archives = JSON.parse(localStorage.getItem('vpip_archives_v2') || '[]');
+
+function save() { localStorage.setItem('vpip_state_v2', JSON.stringify(state)); }
+function load() {
+  const s = localStorage.getItem('vpip_state_v2');
+  if (s) state = JSON.parse(s);
+}
+
+function seatVpip(seatData) {
+  let h = 0, v = 0;
+  for (const p of Object.values(seatData.positions)) { h += p.hands; v += p.vpip; }
+  return { hands: h, vpip: v, pct: h === 0 ? null : Math.round(v / h * 100) };
+}
+
+function vpipColor(pct) {
+  if (pct === null) return 'var(--text2)';
+  if (pct < 20) return 'var(--accent)';
+  if (pct < 30) return 'var(--green)';
+  if (pct < 40) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+// --- Build table seats ---
+function buildTable() {
+  const wrap = document.getElementById('tableWrap');
+  // remove old seats
+  wrap.querySelectorAll('.seat').forEach(e => e.remove());
+
+  for (let i = 1; i <= SEAT_COUNT; i++) {
+    const pos = SEAT_POS[i - 1];
+    const el = document.createElement('div');
+    el.className = 'seat' + (i === state.selectedSeat ? ' selected' : '');
+    el.style.top = pos.top;
+    el.style.left = pos.left;
+    el.id = `seat-${i}`;
+    el.onclick = () => selectSeat(i);
+
+    const sd = state.seats[i];
+    const { pct } = seatVpip(sd);
+    const color = vpipColor(pct);
+    const pctStr = pct === null ? '-' : pct + '%';
+
+    const dot = sd.playerType
+      ? `<div class="seat-type-dot" style="background:${TYPE_COLOR[sd.playerType]}"></div>`
+      : '';
+
+    el.innerHTML = `<div class="seat-inner">
+      ${dot}
+      <div class="seat-num">${i}</div>
+      <div class="seat-vpip" style="color:${color}">${pctStr}</div>
+      <div class="seat-hands">${seatVpip(sd).hands}h</div>
+    </div>`;
+    wrap.appendChild(el);
+  }
+}
+
+function selectSeat(num) {
+  state.selectedSeat = num;
+  save();
+  buildTable();
+  renderDetail();
+}
+
+// --- Detail panel ---
+function renderDetail() {
+  const seat = state.selectedSeat;
+  const sd = state.seats[seat];
+  document.getElementById('detailSeatNum').textContent = seat;
+  document.getElementById('detailName').value = sd.name;
+
+  const { hands, vpip, pct } = seatVpip(sd);
+  document.getElementById('detailVpipPct').textContent = pct === null ? '-' : pct + '%';
+  document.getElementById('detailVpipPct').style.color = vpipColor(pct);
+  document.getElementById('detailHands').textContent = hands;
+  document.getElementById('detailVpipCount').textContent = vpip;
+
+  // type buttons
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.className = 'type-btn';
+    if (btn.dataset.type === sd.playerType) {
+      btn.className = `type-btn sel-${sd.playerType}`;
+    }
+  });
+
+  // pos chips
+  const posRow = document.getElementById('posRow');
+  posRow.innerHTML = POSITIONS.map(pos => {
+    const pd = sd.positions[pos];
+    const pp = pd.hands === 0 ? '' : ` ${Math.round(pd.vpip/pd.hands*100)}%`;
+    return `<div class="pos-chip${pos === sd.selectedPos ? ' active' : ''}" onclick="selectPos('${pos}')">${pos}${pp}</div>`;
+  }).join('');
+}
+
+function selectType(type) {
+  const sd = state.seats[state.selectedSeat];
+  sd.playerType = sd.playerType === type ? null : type;
+  save();
+  buildTable();
+  renderDetail();
+}
+
+function selectPos(pos) {
+  state.seats[state.selectedSeat].selectedPos = pos;
+  save();
+  renderDetail();
+}
+
+function record(action) {
+  const sd = state.seats[state.selectedSeat];
+  const pos = sd.positions[sd.selectedPos];
+  pos.hands++;
+  if (action !== 'fold') pos.vpip++;
+
+  // advance to next seat (wrap around)
+  const next = state.selectedSeat === SEAT_COUNT ? 1 : state.selectedSeat + 1;
+  state.selectedSeat = next;
+
+  save();
+  buildTable();
+  renderDetail();
+  // flash
+  const map = { call: '.btn-call', raise: '.btn-raise', fold: '.btn-fold' };
+  const el = document.querySelector(map[action]);
+  el.style.filter = 'brightness(1.5)';
+  setTimeout(() => el.style.filter = '', 180);
+}
+
+// --- Name input ---
+document.getElementById('detailName').addEventListener('input', e => {
+  state.seats[state.selectedSeat].name = e.target.value;
+  save();
+  buildTable();
+});
+
+// --- Summary ---
+function renderSummary() {
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = Array.from({ length: SEAT_COUNT }, (_, i) => {
+    const seat = i + 1;
+    const sd = state.seats[seat];
+    const { hands, pct } = seatVpip(sd);
+    const color = vpipColor(pct);
+    const pctStr = pct === null ? '-' : pct + '%';
+    const typeLabel = sd.playerType || '';
+    const typeCls = sd.playerType ? `sel-${sd.playerType}` : '';
+    const isSelected = seat === state.selectedSeat;
+    return `<div class="summary-card${isSelected ? ' selected' : ''}" onclick="goToSeat(${seat})">
+      <div class="sc-top">
+        <div class="sc-num">${seat}</div>
+        ${sd.playerType ? `<div class="sc-type" style="color:${TYPE_COLOR[sd.playerType]}">${typeLabel}</div>` : ''}
+      </div>
+      <div class="sc-name">${sd.name || '—'}</div>
+      <div class="sc-vpip" style="color:${color}">${pctStr}</div>
+      <div class="sc-hands">${hands}h</div>
+    </div>`;
+  }).join('');
+}
+
+function goToSeat(seat) {
+  selectSeat(seat);
+  showPage('page-table', 'tab-table');
+}
+
+// --- Save session ---
+function saveSession() {
+  let hasData = false;
+  for (let i = 1; i <= SEAT_COUNT; i++) {
+    if (seatVpip(state.seats[i]).hands > 0) { hasData = true; break; }
+  }
+  if (!hasData) { alert('データがありません'); return; }
+  if (!confirm('現在のテーブルデータを保存しますか？')) return;
+
+  const record = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('ja-JP'),
+    seats: JSON.parse(JSON.stringify(state.seats))
+  };
+  archives.unshift(record);
+  localStorage.setItem('vpip_archives_v2', JSON.stringify(archives));
+  alert('保存しました');
+}
+
+function resetTable() {
+  if (!confirm('テーブル全体をリセットしますか？')) return;
+  state = {
+    selectedSeat: 1,
+    seats: Object.fromEntries(Array.from({ length: SEAT_COUNT }, (_, i) => [i + 1, makeSeat()]))
+  };
+  save();
+  buildTable();
+  renderDetail();
+}
+
+// --- Archives ---
+function renderArchives() {
+  const list = document.getElementById('archiveList');
+  if (archives.length === 0) {
+    list.innerHTML = '<div class="empty-state">保存されたデータがありません</div>';
+    return;
+  }
+  list.innerHTML = archives.map(a => {
+    const seatRows = Array.from({ length: SEAT_COUNT }, (_, i) => {
+      const seat = i + 1;
+      const sd = a.seats[seat];
+      if (!sd) return '';
+      const { hands, vpip, pct } = seatVpip(sd);
+      if (hands === 0) return '';
+      const color = vpipColor(pct);
+      const typeBadge = sd.playerType
+        ? `<span class="aseat-type" style="background:${TYPE_COLOR[sd.playerType]}22;color:${TYPE_COLOR[sd.playerType]}">${sd.playerType}</span>`
+        : '';
+      const posDetail = POSITIONS.map(pos => {
+        const pd = sd.positions[pos];
+        if (!pd || pd.hands === 0) return '';
+        return `${pos}:${Math.round(pd.vpip/pd.hands*100)}%(${pd.hands}h)`;
+      }).filter(Boolean).join(' ');
+      return `<div class="archive-seat-row">
+        <div class="aseat-num">${seat}</div>
+        <div class="aseat-name">${sd.name || '—'}</div>
+        ${typeBadge}
+        <div class="aseat-vpip" style="color:${color}">${pct}%</div>
+        <div class="aseat-hands">${hands}h</div>
+        ${posDetail ? `<div class="pos-detail" style="flex-basis:100%;margin-left:28px">${posDetail}</div>` : ''}
+      </div>`;
+    }).filter(Boolean).join('');
+
+    return `<div class="archive-card">
+      <div class="archive-header">
+        <div>
+          <div class="archive-title">セッション</div>
+          <div class="archive-date">${a.date}</div>
+        </div>
+        <button class="archive-delete" onclick="deleteArchive(${a.id})">🗑</button>
+      </div>
+      <div class="archive-seats">${seatRows || '<div style="color:var(--text2);font-size:12px">データなし</div>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function deleteArchive(id) {
+  if (!confirm('削除しますか？')) return;
+  archives = archives.filter(a => a.id !== id);
+  localStorage.setItem('vpip_archives_v2', JSON.stringify(archives));
+  renderArchives();
+}
+
+// --- Navigation ---
+function showPage(id, tabId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  if (id === 'page-summary') renderSummary();
+  if (id === 'page-archives') renderArchives();
+}
+
+// Init
+load();
+buildTable();
+renderDetail();
+</script>
+</body>
+</html>
