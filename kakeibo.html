@@ -376,6 +376,7 @@
 
     <div class="summary-section" id="summaryExpense"></div>
     <div class="summary-section" id="summaryIncome"></div>
+    <div class="summary-section" id="summaryPoker"></div>
 
     <div class="summary-section">
       <div class="section-title">過去6ヶ月</div>
@@ -387,23 +388,26 @@
 <script>
 const CATEGORIES = {
   income: [
-    { id: 'salary',    label: '給与',    icon: '💼' },
-    { id: 'side',      label: '副収入',  icon: '💻' },
-    { id: 'gift',      label: 'お小遣い', icon: '🎁' },
-    { id: 'invest',    label: '投資',    icon: '📈' },
-    { id: 'refund',    label: '払戻',    icon: '🔄' },
-    { id: 'other_in',  label: 'その他',  icon: '💰' },
+    { id: 'salary',     label: '給与',      icon: '💼' },
+    { id: 'poker_win',  label: 'ポーカー勝', icon: '🃏' },
+    { id: 'side',       label: '副収入',    icon: '💻' },
+    { id: 'gift',       label: 'お小遣い',  icon: '🎁' },
+    { id: 'invest',     label: '投資',      icon: '📈' },
+    { id: 'refund',     label: '払戻',      icon: '🔄' },
+    { id: 'other_in',   label: 'その他',    icon: '💰' },
   ],
   expense: [
-    { id: 'food',      label: '食費',    icon: '🍜' },
-    { id: 'transport', label: '交通費',  icon: '🚃' },
-    { id: 'housing',   label: '住居費',  icon: '🏠' },
-    { id: 'utility',   label: '光熱費',  icon: '💡' },
-    { id: 'medical',   label: '医療',    icon: '🏥' },
-    { id: 'clothing',  label: '被服',    icon: '👕' },
-    { id: 'daily',     label: '日用品',  icon: '🛒' },
-    { id: 'enjoy',     label: '娯楽',    icon: '🎮' },
-    { id: 'other_ex',  label: 'その他',  icon: '📦' },
+    { id: 'food',       label: '食費',      icon: '🍜' },
+    { id: 'snack',      label: 'お菓子',    icon: '🍬' },
+    { id: 'clothing',   label: '洋服',      icon: '👕' },
+    { id: 'poker_lose', label: 'ポーカー負', icon: '🃏' },
+    { id: 'transport',  label: '交通費',    icon: '🚃' },
+    { id: 'housing',    label: '住居費',    icon: '🏠' },
+    { id: 'utility',    label: '光熱費',    icon: '💡' },
+    { id: 'medical',    label: '医療',      icon: '🏥' },
+    { id: 'daily',      label: '日用品',    icon: '🛒' },
+    { id: 'enjoy',      label: '娯楽',      icon: '🎮' },
+    { id: 'other_ex',   label: 'その他',    icon: '📦' },
   ]
 };
 
@@ -590,6 +594,26 @@ function renderSummary() {
 
   renderCatSection('expense', document.getElementById('summaryExpense'), '支出カテゴリ');
   renderCatSection('income', document.getElementById('summaryIncome'), '収入カテゴリ');
+
+  // Poker summary
+  const pokerEl = document.getElementById('summaryPoker');
+  const pokerWin = recs.filter(r => r.category === 'poker_win').reduce((s, r) => s + r.amount, 0);
+  const pokerLose = recs.filter(r => r.category === 'poker_lose').reduce((s, r) => s + r.amount, 0);
+  const pokerNet = pokerWin - pokerLose;
+  if (pokerWin > 0 || pokerLose > 0) {
+    const netColor = pokerNet >= 0 ? 'var(--green)' : 'var(--red)';
+    const netSign = pokerNet >= 0 ? '+' : '';
+    pokerEl.innerHTML = `<div class="section-title">🃏 ポーカー収支</div>
+      <div class="balance-bar" style="margin-bottom:0">
+        <div class="balance-item"><div class="balance-val bal-income">${fmtAmt(pokerWin)}</div><div class="balance-lbl">勝ち</div></div>
+        <div class="balance-divider"></div>
+        <div class="balance-item"><div class="balance-val bal-expense">${fmtAmt(pokerLose)}</div><div class="balance-lbl">負け</div></div>
+        <div class="balance-divider"></div>
+        <div class="balance-item"><div class="balance-val" style="color:${netColor};font-size:20px;font-weight:800">${netSign}${fmtAmt(pokerNet)}</div><div class="balance-lbl">収支</div></div>
+      </div>`;
+  } else {
+    pokerEl.innerHTML = '';
+  }
 
   // Monthly chart (past 6 months)
   const months = [];
