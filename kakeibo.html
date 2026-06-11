@@ -312,6 +312,60 @@
   .month-bar.expense { background: var(--red); }
   .month-label { font-size: 9px; color: var(--text2); }
 
+  /* ===== TUTORIAL ===== */
+  .tutorial-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    z-index: 300; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .tutorial-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%; max-width: 420px;
+    padding: 28px 24px 24px;
+    position: relative;
+  }
+  .tutorial-step-dots {
+    display: flex; justify-content: center; gap: 6px; margin-bottom: 24px;
+  }
+  .tutorial-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border); transition: background 0.2s, width 0.2s;
+  }
+  .tutorial-dot.active { background: var(--accent); width: 20px; border-radius: 4px; }
+  .tutorial-icon { font-size: 52px; text-align: center; margin-bottom: 16px; }
+  .tutorial-title { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 10px; }
+  .tutorial-body { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; text-align: center; }
+  .tutorial-body b { color: var(--text); }
+  .tutorial-tip {
+    background: var(--surface2); border-radius: 10px;
+    padding: 10px 14px; font-size: 12px; color: var(--text2);
+    line-height: 1.6; margin-bottom: 20px; text-align: left;
+  }
+  .tutorial-tip b { color: var(--accent); }
+  .tutorial-actions { display: flex; gap: 8px; }
+  .tutorial-skip {
+    flex: 0; padding: 13px 16px; border-radius: 12px;
+    border: 1px solid var(--border); background: none;
+    color: var(--text2); font-size: 14px; cursor: pointer; white-space: nowrap;
+  }
+  .tutorial-next {
+    flex: 1; padding: 14px; border-radius: 12px; border: none;
+    background: var(--accent); color: #fff; font-size: 15px;
+    font-weight: 700; cursor: pointer; transition: opacity 0.1s;
+  }
+  .tutorial-next:active { opacity: 0.75; }
+  .tutorial-next.last { background: var(--green); }
+  .help-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text2); border-radius: 50%;
+    width: 30px; height: 30px; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .help-btn:hover { background: var(--surface2); color: var(--text); }
+
   /* ===== IMPORT MODAL ===== */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.75);
@@ -398,7 +452,10 @@
 
 <header>
   <div class="logo">💰 家計簿</div>
-  <button class="icon-btn-import" onclick="openImport()">↑ OLIVEインポート</button>
+  <div style="display:flex;gap:6px;align-items:center">
+  <button class="help-btn" onclick="openTutorial()" title="使い方">?</button>
+  <button class="icon-btn-import" onclick="openImport()">↑ OLIVE</button>
+  </div>
   <div class="header-month">
     <button class="month-nav" onclick="prevMonth()">‹</button>
     <span id="headerMonth"></span>
@@ -759,6 +816,76 @@ function showFlash(msg) {
   flashTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
 }
 
+// ===== TUTORIAL =====
+const TUTORIAL_STEPS = [
+  {
+    icon: '💰',
+    title: '家計簿へようこそ',
+    body: '収入・支出を記録して<br>お金の流れを一目で管理できます。',
+    tip: '<b>こんなことができます</b><br>✓ 給与・ポーカー収支・日々の支出を記録<br>✓ OLIVEのCSVを一括インポート<br>✓ 月別・カテゴリ別に集計',
+  },
+  {
+    icon: '✏️',
+    title: '収支を記録する',
+    body: '<b>「入力」タブ</b>から記録します。<br>収入か支出を選び、金額・カテゴリ・日付を入れて「追加する」をタップ。',
+    tip: '<b>カテゴリ例</b><br>💼 給与　🃏 ポーカー勝ち／負け<br>🍬 お菓子　👕 洋服　🍜 食費　など',
+  },
+  {
+    icon: '📥',
+    title: 'OLIVEから一括取込',
+    body: '<b>「↑ OLIVE」ボタン</b>でCSVを読み込むと、明細が自動で取り込まれます。',
+    tip: '<b>CSVの取得方法</b><br>① SMBCダイレクト → 入出金明細 → CSV出力<br>② OLIVEアプリ → 明細 → ダウンロード<br>③ 三井住友カード → 利用明細 → CSV<br><br>カテゴリは店名から自動判定されます。',
+  },
+  {
+    icon: '📊',
+    title: '集計を確認する',
+    body: '<b>「集計」タブ</b>で月ごとの収支・カテゴリ別内訳・過去6ヶ月の推移グラフが見られます。',
+    tip: '<b>ヘッダーの ‹ › </b>で月を切り替え\n<br><b>「一覧」タブ</b>では各記録の削除も可能',
+  },
+  {
+    icon: '📱',
+    title: 'ホーム画面に追加する',
+    body: 'ブラウザのメニューから<b>「ホーム画面に追加」</b>すると、アプリのように起動できます。',
+    tip: '<b>iPhone (Safari)</b><br>① 下のシェアボタン □↑ をタップ<br>② 「ホーム画面に追加」を選択<br><br><b>Android (Chrome)</b><br>① 右上の ⋮ メニューをタップ<br>② 「ホーム画面に追加」を選択',
+  },
+];
+
+let tutorialStep = 0;
+
+function openTutorial(step = 0) {
+  tutorialStep = step;
+  renderTutorial();
+  document.getElementById('tutorialOverlay').style.display = 'flex';
+}
+
+function closeTutorial() {
+  document.getElementById('tutorialOverlay').style.display = 'none';
+  localStorage.setItem('kakeibo_tutorial_done', '1');
+}
+
+function renderTutorial() {
+  const s = TUTORIAL_STEPS[tutorialStep];
+  const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+  const dots = TUTORIAL_STEPS.map((_, i) =>
+    `<div class="tutorial-dot${i === tutorialStep ? ' active' : ''}"></div>`
+  ).join('');
+  document.getElementById('tutorialCard').innerHTML = `
+    <div class="tutorial-step-dots">${dots}</div>
+    <div class="tutorial-icon">${s.icon}</div>
+    <div class="tutorial-title">${s.title}</div>
+    <div class="tutorial-body">${s.body}</div>
+    <div class="tutorial-tip">${s.tip}</div>
+    <div class="tutorial-actions">
+      ${tutorialStep === 0
+        ? `<button class="tutorial-skip" onclick="closeTutorial()">スキップ</button>`
+        : `<button class="tutorial-skip" onclick="tutorialStep--;renderTutorial()">‹ 戻る</button>`
+      }
+      <button class="tutorial-next${isLast ? ' last' : ''}" onclick="${isLast ? 'closeTutorial()' : 'tutorialStep++;renderTutorial()'}">
+        ${isLast ? '✓ 始める' : '次へ ›'}
+      </button>
+    </div>`;
+}
+
 // ===== CSV IMPORT =====
 const AUTO_CAT_RULES = [
   // Income
@@ -990,8 +1117,14 @@ function executeImport() {
     `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   renderCategoryGrid();
   renderAll();
+  if (!localStorage.getItem('kakeibo_tutorial_done')) openTutorial(0);
 })();
 </script>
+<!-- TUTORIAL -->
+<div id="tutorialOverlay" class="tutorial-overlay" style="display:none">
+  <div class="tutorial-card" id="tutorialCard"></div>
+</div>
+
 <!-- IMPORT MODAL -->
 <div id="importModal" class="modal-overlay" style="display:none" onclick="overlayClose(event)">
   <div class="modal">
