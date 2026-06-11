@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VPIP Tracker</title>
+<title>家計簿</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,10 +18,6 @@
     --text: #e6edf3;
     --text2: #8b949e;
     --border: #30363d;
-    --tag-color: #58a6ff;
-    --tp-color: #79c0ff;
-    --lag-color: #f85149;
-    --lp-color: #d29922;
   }
 
   body {
@@ -36,7 +32,6 @@
     overflow-x: hidden;
   }
 
-  /* Header */
   header {
     display: flex;
     align-items: center;
@@ -48,22 +43,25 @@
     top: 0;
     z-index: 100;
   }
-  .logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; }
-  .header-actions { display: flex; gap: 6px; }
-  .icon-btn {
+  .logo { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .header-month {
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .month-nav {
     background: none;
     border: 1px solid var(--border);
     color: var(--text);
-    border-radius: 8px;
-    padding: 5px 10px;
-    font-size: 12px;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
     cursor: pointer;
-    transition: background 0.15s;
   }
-  .icon-btn:hover { background: var(--surface2); }
-  .icon-btn.danger:hover { background: #3a1212; border-color: var(--red); color: var(--red); }
+  .month-nav:hover { background: var(--surface2); }
 
-  /* Tabs */
   nav {
     display: flex;
     background: var(--surface);
@@ -82,652 +80,1088 @@
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   main { flex: 1; overflow-y: auto; }
-  .page { display: none; padding: 14px 16px; }
+  .page { display: none; padding: 14px 16px 80px; }
   .page.active { display: block; }
 
-  /* ===== TABLE VIEW ===== */
-  .section-label {
-    font-size: 11px;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 8px;
-  }
-
-  /* Oval table */
-  .table-wrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 0.65;
-    margin-bottom: 14px;
-  }
-  .table-felt {
-    position: absolute;
-    inset: 18%;
-    background: radial-gradient(ellipse at center, #1a4a2e 0%, #0f2d1a 100%);
-    border-radius: 50%;
-    border: 4px solid #2a6b3f;
-    box-shadow: 0 0 0 3px #1a4a2e, inset 0 0 30px rgba(0,0,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .table-label { font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 600; letter-spacing: 1px; }
-
-  /* Seat positions around the oval */
-  .seat {
-    position: absolute;
-    width: 54px;
-    height: 64px;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .seat-inner {
-    background: var(--surface2);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    transition: all 0.15s;
-    position: relative;
-  }
-  .seat.selected .seat-inner {
-    border-color: var(--accent);
-    background: rgba(88,166,255,0.12);
-    box-shadow: 0 0 10px rgba(88,166,255,0.3);
-  }
-  .seat-num {
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-  }
-  .seat.selected .seat-num { color: var(--accent); }
-  .seat-vpip {
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1;
-  }
-  .seat-hands {
-    font-size: 9px;
-    color: var(--text2);
-    line-height: 1;
-  }
-  .seat-type-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    position: absolute;
-    top: 4px;
-    right: 4px;
-  }
-
-  /* ===== DETAIL PANEL ===== */
-  .detail-panel {
+  /* ===== BALANCE BAR ===== */
+  .balance-bar {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 14px;
+    padding: 14px 16px;
     margin-bottom: 14px;
-  }
-  .detail-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
+    gap: 12px;
   }
-  .detail-seat-num {
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--accent);
-  }
-  .detail-name-input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-size: 14px;
-    text-align: center;
-    padding: 6px 10px;
-    border-radius: 8px;
-    width: 140px;
-    outline: none;
-  }
-  .detail-name-input:focus { border-color: var(--accent); }
+  .balance-item { flex: 1; text-align: center; }
+  .balance-val { font-size: 20px; font-weight: 800; }
+  .balance-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .bal-income { color: var(--green); }
+  .bal-expense { color: var(--red); }
+  .bal-total { color: var(--accent); }
+  .balance-divider { width: 1px; background: var(--border); }
 
-  /* Mini stats row */
-  .mini-stats {
+  /* ===== INPUT FORM ===== */
+  .type-toggle {
     display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 14px;
+    gap: 4px;
   }
-  .mini-stat {
+  .type-toggle-btn {
     flex: 1;
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 8px;
-    text-align: center;
+    padding: 10px;
+    border-radius: 9px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    background: none;
+    color: var(--text2);
+    transition: all 0.15s;
   }
-  .mini-stat-val { font-size: 20px; font-weight: 800; color: var(--accent); }
-  .mini-stat-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .type-toggle-btn.active-income { background: var(--green); color: #fff; }
+  .type-toggle-btn.active-expense { background: var(--red); color: #fff; }
 
-  /* Player type */
-  .type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-  .type-btn {
-    padding: 7px 4px;
-    border-radius: 8px;
+  .form-section { margin-bottom: 14px; }
+  .form-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .amount-input-wrap { position: relative; }
+  .amount-prefix {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text2);
+  }
+  .amount-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-size: 28px;
+    font-weight: 800;
+    padding: 12px 14px 12px 36px;
+    border-radius: 12px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .amount-input:focus { border-color: var(--accent); }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .cat-btn {
+    padding: 9px 6px;
+    border-radius: 10px;
     border: 2px solid var(--border);
     background: var(--surface2);
     color: var(--text2);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     text-align: center;
     transition: all 0.15s;
   }
-  .type-btn .abbr { font-size: 14px; display: block; }
-  .type-btn .full { font-size: 9px; display: block; margin-top: 1px; }
-  .type-btn.sel-TAG { border-color: var(--tag-color); background: rgba(88,166,255,0.12); color: var(--tag-color); }
-  .type-btn.sel-TP  { border-color: var(--tp-color);  background: rgba(121,192,255,0.12); color: var(--tp-color); }
-  .type-btn.sel-LAG { border-color: var(--lag-color); background: rgba(248,81,73,0.12);   color: var(--lag-color); }
-  .type-btn.sel-LP  { border-color: var(--lp-color);  background: rgba(210,153,34,0.12);  color: var(--lp-color); }
+  .cat-btn .cat-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+  .cat-btn.sel-income { border-color: var(--green); background: rgba(63,185,80,0.12); color: var(--green); }
+  .cat-btn.sel-expense { border-color: var(--red); background: rgba(248,81,73,0.12); color: var(--red); }
 
-  /* Position chips for current seat */
-  .pos-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 12px;
-  }
-  .pos-chip {
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
+  .date-input, .memo-input {
+    width: 100%;
     background: var(--surface2);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.12s;
-  }
-  .pos-chip.active {
-    border-color: var(--accent);
-    background: rgba(88,166,255,0.12);
-    color: var(--accent);
-  }
-
-  /* Action buttons */
-  .action-buttons { display: flex; flex-direction: column; gap: 8px; }
-  .btn-row { display: flex; gap: 8px; }
-  .btn {
-    flex: 1;
-    padding: 16px;
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-size: 15px;
+    padding: 11px 14px;
     border-radius: 12px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .date-input:focus, .memo-input:focus { border-color: var(--accent); }
+  .memo-input { font-family: inherit; resize: none; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
     border: none;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     cursor: pointer;
+    color: #fff;
+    background: var(--accent);
+    transition: opacity 0.1s, transform 0.1s;
+    margin-top: 6px;
+  }
+  .submit-btn:active { opacity: 0.75; transform: scale(0.98); }
+  .submit-btn.income-mode { background: var(--green); }
+  .submit-btn.expense-mode { background: var(--red); }
+
+  /* ===== HISTORY ===== */
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .record-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .record-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    transition: opacity 0.1s, transform 0.1s;
-    -webkit-tap-highlight-color: transparent;
+    font-size: 20px;
+    flex-shrink: 0;
   }
-  .btn:active { opacity: 0.7; transform: scale(0.97); }
-  .btn-call  { background: #1f6feb; color: #fff; }
-  .btn-raise { background: #2ea043; color: #fff; }
-  .btn-fold  { background: var(--surface2); color: var(--text2); font-size: 14px; border: 1px solid var(--border); }
-
-  /* All seats summary */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .summary-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px;
+  .record-icon-wrap.income { background: rgba(63,185,80,0.15); }
+  .record-icon-wrap.expense { background: rgba(248,81,73,0.15); }
+  .record-info { flex: 1; min-width: 0; }
+  .record-cat { font-size: 13px; font-weight: 700; }
+  .record-memo { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .record-date { font-size: 11px; color: var(--text2); }
+  .record-amount { font-size: 17px; font-weight: 800; flex-shrink: 0; }
+  .record-amount.income { color: var(--green); }
+  .record-amount.expense { color: var(--red); }
+  .record-delete {
+    background: none;
+    border: none;
+    color: var(--text2);
     cursor: pointer;
-    transition: border-color 0.15s;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 6px;
+    flex-shrink: 0;
   }
-  .summary-card:hover { border-color: var(--accent); }
-  .summary-card.selected { border-color: var(--accent); background: rgba(88,166,255,0.08); }
-  .sc-top { display: flex; justify-content: space-between; align-items: center; }
-  .sc-num { font-size: 18px; font-weight: 800; color: var(--text); }
-  .sc-type { font-size: 10px; font-weight: 700; }
-  .sc-name { font-size: 11px; color: var(--text2); margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sc-vpip { font-size: 22px; font-weight: 800; }
-  .sc-hands { font-size: 10px; color: var(--text2); }
+  .record-delete:hover { color: var(--red); }
 
-  /* Archives */
-  .archive-list { display: flex; flex-direction: column; gap: 10px; }
-  .archive-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+    font-size: 14px;
   }
-  .archive-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .archive-title { font-size: 15px; font-weight: 700; }
-  .archive-date { font-size: 11px; color: var(--text2); }
-  .archive-seats { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-  .archive-seat-row {
+
+  /* ===== SUMMARY ===== */
+  .summary-section { margin-bottom: 20px; }
+  .section-title {
+    font-size: 12px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .cat-summary-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .cat-summary-icon { font-size: 18px; width: 24px; text-align: center; }
+  .cat-summary-info { flex: 1; min-width: 0; }
+  .cat-summary-name { font-size: 13px; font-weight: 600; }
+  .cat-summary-bar-wrap {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin-top: 4px;
+  }
+  .cat-summary-bar { height: 100%; border-radius: 2px; transition: width 0.3s; }
+  .cat-summary-bar.income { background: var(--green); }
+  .cat-summary-bar.expense { background: var(--red); }
+  .cat-summary-amount { font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .cat-summary-amount.income { color: var(--green); }
+  .cat-summary-amount.expense { color: var(--red); }
+
+  .monthly-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 120px;
+    margin-bottom: 6px;
+  }
+  .month-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .month-bars { display: flex; gap: 2px; align-items: flex-end; height: 100px; }
+  .month-bar {
+    width: 14px;
+    border-radius: 3px 3px 0 0;
+    min-height: 2px;
+    transition: height 0.3s;
+  }
+  .month-bar.income { background: var(--green); }
+  .month-bar.expense { background: var(--red); }
+  .month-label { font-size: 9px; color: var(--text2); }
+
+  /* ===== TUTORIAL ===== */
+  .tutorial-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    z-index: 300; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .tutorial-card {
     background: var(--surface);
-    border-radius: 6px;
-    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%; max-width: 420px;
+    padding: 28px 24px 24px;
+    position: relative;
   }
-  .aseat-num { font-weight: 700; color: var(--accent); width: 20px; }
-  .aseat-name { flex: 1; color: var(--text2); }
-  .aseat-type { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
-  .aseat-vpip { font-weight: 700; color: var(--accent); }
-  .aseat-hands { color: var(--text2); font-size: 10px; }
-  .pos-detail { font-size: 10px; color: var(--text2); margin-top: 4px; padding-left: 28px; flex-basis: 100%; }
-  .archive-delete {
-    background: none; border: none; color: var(--text2);
-    cursor: pointer; font-size: 18px; padding: 4px; border-radius: 6px;
+  .tutorial-step-dots {
+    display: flex; justify-content: center; gap: 6px; margin-bottom: 24px;
   }
-  .archive-delete:hover { color: var(--red); }
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 14px; }
+  .tutorial-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border); transition: background 0.2s, width 0.2s;
+  }
+  .tutorial-dot.active { background: var(--accent); width: 20px; border-radius: 4px; }
+  .tutorial-icon { font-size: 52px; text-align: center; margin-bottom: 16px; }
+  .tutorial-title { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 10px; }
+  .tutorial-body { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; text-align: center; }
+  .tutorial-body b { color: var(--text); }
+  .tutorial-tip {
+    background: var(--surface2); border-radius: 10px;
+    padding: 10px 14px; font-size: 12px; color: var(--text2);
+    line-height: 1.6; margin-bottom: 20px; text-align: left;
+  }
+  .tutorial-tip b { color: var(--accent); }
+  .tutorial-actions { display: flex; gap: 8px; }
+  .tutorial-skip {
+    flex: 0; padding: 13px 16px; border-radius: 12px;
+    border: 1px solid var(--border); background: none;
+    color: var(--text2); font-size: 14px; cursor: pointer; white-space: nowrap;
+  }
+  .tutorial-next {
+    flex: 1; padding: 14px; border-radius: 12px; border: none;
+    background: var(--accent); color: #fff; font-size: 15px;
+    font-weight: 700; cursor: pointer; transition: opacity 0.1s;
+  }
+  .tutorial-next:active { opacity: 0.75; }
+  .tutorial-next.last { background: var(--green); }
+  .help-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text2); border-radius: 50%;
+    width: 30px; height: 30px; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .help-btn:hover { background: var(--surface2); color: var(--text); }
+
+  /* ===== IMPORT MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 200; display: flex; align-items: flex-end;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 480px; margin: 0 auto;
+    max-height: 92vh; display: flex; flex-direction: column;
+    border: 1px solid var(--border); border-bottom: none;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close {
+    background: var(--surface2); border: none; color: var(--text2);
+    border-radius: 50%; width: 30px; height: 30px; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-body { flex: 1; overflow-y: auto; padding: 16px 18px 24px; }
+
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 14px;
+    padding: 40px 20px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 14px;
+  }
+  .dropzone:hover, .dropzone.drag-over { border-color: var(--accent); background: rgba(88,166,255,0.06); }
+  .dropzone-icon { font-size: 40px; margin-bottom: 10px; }
+  .dropzone-text { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .dropzone-sub { font-size: 12px; color: var(--text2); }
+
+  .import-hint {
+    background: var(--surface2); border-radius: 10px;
+    padding: 12px 14px; font-size: 12px; color: var(--text2); line-height: 1.6;
+  }
+  .import-hint b { color: var(--text); }
+
+  .import-summary {
+    background: var(--surface2); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 12px;
+    font-size: 13px; display: flex; gap: 16px;
+  }
+  .import-summary span { color: var(--text2); }
+  .import-summary b { color: var(--text); }
+
+  .import-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px; }
+  .import-table th {
+    text-align: left; padding: 6px 8px; color: var(--text2);
+    border-bottom: 1px solid var(--border); font-weight: 600; font-size: 11px;
+  }
+  .import-table td { padding: 7px 8px; border-bottom: 1px solid rgba(48,54,61,0.5); vertical-align: middle; }
+  .import-table tr:hover td { background: var(--surface2); }
+  .import-table .td-date { color: var(--text2); white-space: nowrap; }
+  .import-table .td-desc { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .import-table .td-amt-in { color: var(--green); font-weight: 700; text-align: right; white-space: nowrap; }
+  .import-table .td-amt-out { color: var(--red); font-weight: 700; text-align: right; white-space: nowrap; }
+  .import-table select {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-size: 11px; border-radius: 6px;
+    padding: 3px 5px; width: 100%; outline: none;
+  }
+  .import-table .skip-row td { opacity: 0.35; }
+  .td-skip input { accent-color: var(--accent); cursor: pointer; }
+
+  .import-btn {
+    width: 100%; padding: 15px; border-radius: 12px; border: none;
+    font-size: 16px; font-weight: 700; color: #fff;
+    background: var(--accent); cursor: pointer;
+    transition: opacity 0.1s;
+  }
+  .import-btn:active { opacity: 0.75; }
+  .icon-btn-import {
+    background: rgba(88,166,255,0.12); border: 1px solid var(--accent);
+    color: var(--accent); border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M6 3L2 9l10 12L22 9l-4-6H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    </svg>
-    VPIP
+  <div class="logo">💰 家計簿</div>
+  <div style="display:flex;gap:6px;align-items:center">
+  <button class="help-btn" onclick="openTutorial()" title="使い方">?</button>
+  <button class="icon-btn-import" onclick="openImport()">↑ OLIVE</button>
   </div>
-  <div class="header-actions">
-    <button class="icon-btn danger" onclick="resetTable()">↺ Reset</button>
-    <button class="icon-btn" onclick="saveSession()">✓ Save</button>
+  <div class="header-month">
+    <button class="month-nav" onclick="prevMonth()">‹</button>
+    <span id="headerMonth"></span>
+    <button class="month-nav" onclick="nextMonth()">›</button>
   </div>
 </header>
 
 <nav>
-  <div class="tab active" id="tab-table" onclick="showPage('page-table', 'tab-table')">Table</div>
-  <div class="tab" id="tab-summary" onclick="showPage('page-summary', 'tab-summary')">Summary</div>
-  <div class="tab" id="tab-archives" onclick="showPage('page-archives', 'tab-archives')">Archives</div>
+  <div class="tab active" id="tab-input" onclick="showPage('page-input','tab-input')">入力</div>
+  <div class="tab" id="tab-history" onclick="showPage('page-history','tab-history')">一覧</div>
+  <div class="tab" id="tab-summary" onclick="showPage('page-summary','tab-summary')">集計</div>
 </nav>
 
 <main>
-  <!-- TABLE PAGE -->
-  <div id="page-table" class="page active">
-    <div class="table-wrap" id="tableWrap">
-      <div class="table-felt"><span class="table-label">POKER TABLE</span></div>
+  <!-- INPUT PAGE -->
+  <div id="page-input" class="page active">
+    <div class="type-toggle">
+      <button class="type-toggle-btn active-income" id="btn-income" onclick="setType('income')">＋ 収入</button>
+      <button class="type-toggle-btn" id="btn-expense" onclick="setType('expense')">－ 支出</button>
     </div>
 
-    <div class="detail-panel" id="detailPanel">
-      <div class="detail-header">
-        <div class="detail-seat-num">Seat <span id="detailSeatNum">1</span></div>
-        <input class="detail-name-input" id="detailName" type="text" placeholder="プレイヤー名">
-      </div>
-
-      <div class="mini-stats">
-        <div class="mini-stat">
-          <div class="mini-stat-val" id="detailVpipPct">0%</div>
-          <div class="mini-stat-lbl">VPIP</div>
-        </div>
-        <div class="mini-stat">
-          <div class="mini-stat-val" id="detailHands">0</div>
-          <div class="mini-stat-lbl">Hands</div>
-        </div>
-        <div class="mini-stat">
-          <div class="mini-stat-val" id="detailVpipCount">0</div>
-          <div class="mini-stat-lbl">VPIP count</div>
-        </div>
-      </div>
-
-      <div class="section-label">プレイヤータイプ</div>
-      <div class="type-grid" id="typeGrid">
-        <button class="type-btn" data-type="TAG" onclick="selectType('TAG')">
-          <span class="abbr">TAG</span><span class="full">タイトアグレ</span>
-        </button>
-        <button class="type-btn" data-type="TP" onclick="selectType('TP')">
-          <span class="abbr">TP</span><span class="full">タイトパッシブ</span>
-        </button>
-        <button class="type-btn" data-type="LAG" onclick="selectType('LAG')">
-          <span class="abbr">LAG</span><span class="full">ルースアグレ</span>
-        </button>
-        <button class="type-btn" data-type="LP" onclick="selectType('LP')">
-          <span class="abbr">LP</span><span class="full">ルースパッシブ</span>
-        </button>
-      </div>
-
-      <div class="section-label">ポジション</div>
-      <div class="pos-row" id="posRow"></div>
-
-      <div class="action-buttons">
-        <div class="btn-row">
-          <button class="btn btn-call"  onclick="record('call')">✓ Call</button>
-          <button class="btn btn-raise" onclick="record('raise')">↗ Raise</button>
-        </div>
-        <button class="btn btn-fold" onclick="record('fold')">✕ Fold</button>
+    <div class="form-section">
+      <div class="form-label">金額</div>
+      <div class="amount-input-wrap">
+        <span class="amount-prefix">¥</span>
+        <input class="amount-input" id="amountInput" type="number" inputmode="numeric" placeholder="0" min="0">
       </div>
     </div>
+
+    <div class="form-section">
+      <div class="form-label">カテゴリ</div>
+      <div class="category-grid" id="categoryGrid"></div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-label">日付</div>
+      <input class="date-input" id="dateInput" type="date">
+    </div>
+
+    <div class="form-section">
+      <div class="form-label">メモ（任意）</div>
+      <textarea class="memo-input" id="memoInput" rows="2" placeholder="メモを入力..."></textarea>
+    </div>
+
+    <button class="submit-btn income-mode" id="submitBtn" onclick="addRecord()">追加する</button>
+  </div>
+
+  <!-- HISTORY PAGE -->
+  <div id="page-history" class="page">
+    <div class="balance-bar" id="historyBalance"></div>
+    <div class="history-list" id="historyList"></div>
   </div>
 
   <!-- SUMMARY PAGE -->
   <div id="page-summary" class="page">
-    <div class="section-label" style="margin-bottom:10px">全シート概要</div>
-    <div class="summary-grid" id="summaryGrid"></div>
-  </div>
+    <div class="balance-bar" id="summaryBalance"></div>
 
-  <!-- ARCHIVES PAGE -->
-  <div id="page-archives" class="page">
-    <div id="archiveList" class="archive-list"></div>
+    <div class="summary-section" id="summaryExpense"></div>
+    <div class="summary-section" id="summaryIncome"></div>
+    <div class="summary-section" id="summaryPoker"></div>
+
+    <div class="summary-section">
+      <div class="section-title">過去6ヶ月</div>
+      <div class="monthly-chart" id="monthlyChart"></div>
+    </div>
   </div>
 </main>
 
 <script>
-const POSITIONS = ['UTG','UTG+1','MP','HJ','CO','BTN','SB','BB'];
-const TYPE_COLOR = { TAG: 'var(--tag-color)', TP: 'var(--tp-color)', LAG: 'var(--lag-color)', LP: 'var(--lp-color)' };
-const TYPE_JP = { TAG: 'タイトアグレ', TP: 'タイトパッシブ', LAG: 'ルースアグレ', LP: 'ルースパッシブ' };
-const SEAT_COUNT = 9;
-
-// Seat positions around the oval (percentage of container)
-// top, left
-const SEAT_POS = [
-  { top: '8%',  left: '50%'  }, // 1 - top center
-  { top: '18%', left: '82%'  }, // 2 - top right
-  { top: '45%', left: '95%'  }, // 3 - mid right
-  { top: '72%', left: '82%'  }, // 4 - bottom right
-  { top: '88%', left: '64%'  }, // 5 - bottom right-center
-  { top: '88%', left: '36%'  }, // 6 - bottom left-center
-  { top: '72%', left: '18%'  }, // 7 - bottom left
-  { top: '45%', left: '5%'   }, // 8 - mid left
-  { top: '18%', left: '18%'  }, // 9 - top left
-];
-
-function makeSeat() {
-  return {
-    name: '',
-    playerType: null,
-    selectedPos: 'BTN',
-    positions: Object.fromEntries(POSITIONS.map(p => [p, { hands: 0, vpip: 0 }]))
-  };
-}
-
-let state = {
-  selectedSeat: 1,
-  seats: Object.fromEntries(
-    Array.from({ length: SEAT_COUNT }, (_, i) => [i + 1, makeSeat()])
-  )
+const CATEGORIES = {
+  income: [
+    { id: 'salary',     label: '給与',      icon: '💼' },
+    { id: 'poker_win',  label: 'ポーカー勝', icon: '🃏' },
+    { id: 'side',       label: '副収入',    icon: '💻' },
+    { id: 'gift',       label: 'お小遣い',  icon: '🎁' },
+    { id: 'invest',     label: '投資',      icon: '📈' },
+    { id: 'refund',     label: '払戻',      icon: '🔄' },
+    { id: 'other_in',   label: 'その他',    icon: '💰' },
+  ],
+  expense: [
+    { id: 'food',       label: '食費',      icon: '🍜' },
+    { id: 'snack',      label: 'お菓子',    icon: '🍬' },
+    { id: 'clothing',   label: '洋服',      icon: '👕' },
+    { id: 'poker_lose', label: 'ポーカー負', icon: '🃏' },
+    { id: 'transport',  label: '交通費',    icon: '🚃' },
+    { id: 'housing',    label: '住居費',    icon: '🏠' },
+    { id: 'utility',    label: '光熱費',    icon: '💡' },
+    { id: 'medical',    label: '医療',      icon: '🏥' },
+    { id: 'daily',      label: '日用品',    icon: '🛒' },
+    { id: 'enjoy',      label: '娯楽',      icon: '🎮' },
+    { id: 'other_ex',   label: 'その他',    icon: '📦' },
+  ]
 };
 
-let archives = JSON.parse(localStorage.getItem('vpip_archives_v2') || '[]');
+const CAT_MAP = {};
+[...CATEGORIES.income, ...CATEGORIES.expense].forEach(c => CAT_MAP[c.id] = c);
 
-function save() { localStorage.setItem('vpip_state_v2', JSON.stringify(state)); }
-function load() {
-  const s = localStorage.getItem('vpip_state_v2');
-  if (s) state = JSON.parse(s);
+let records = JSON.parse(localStorage.getItem('kakeibo_v1') || '[]');
+let currentType = 'income';
+let selectedCat = 'salary';
+let currentMonth = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+})();
+
+function saveRecords() { localStorage.setItem('kakeibo_v1', JSON.stringify(records)); }
+
+function prevMonth() {
+  const [y, m] = currentMonth.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  renderAll();
+}
+function nextMonth() {
+  const [y, m] = currentMonth.split('-').map(Number);
+  const d = new Date(y, m, 1);
+  currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  renderAll();
 }
 
-function seatVpip(seatData) {
-  let h = 0, v = 0;
-  for (const p of Object.values(seatData.positions)) { h += p.hands; v += p.vpip; }
-  return { hands: h, vpip: v, pct: h === 0 ? null : Math.round(v / h * 100) };
+function fmtMonth(ym) {
+  const [y, m] = ym.split('-');
+  return `${y}年${Number(m)}月`;
 }
 
-function vpipColor(pct) {
-  if (pct === null) return 'var(--text2)';
-  if (pct < 20) return 'var(--accent)';
-  if (pct < 30) return 'var(--green)';
-  if (pct < 40) return 'var(--yellow)';
-  return 'var(--red)';
+function fmtAmt(n) {
+  return '¥' + n.toLocaleString('ja-JP');
 }
 
-// --- Build table seats ---
-function buildTable() {
-  const wrap = document.getElementById('tableWrap');
-  // remove old seats
-  wrap.querySelectorAll('.seat').forEach(e => e.remove());
-
-  for (let i = 1; i <= SEAT_COUNT; i++) {
-    const pos = SEAT_POS[i - 1];
-    const el = document.createElement('div');
-    el.className = 'seat' + (i === state.selectedSeat ? ' selected' : '');
-    el.style.top = pos.top;
-    el.style.left = pos.left;
-    el.id = `seat-${i}`;
-    el.onclick = () => selectSeat(i);
-
-    const sd = state.seats[i];
-    const { pct } = seatVpip(sd);
-    const color = vpipColor(pct);
-    const pctStr = pct === null ? '-' : pct + '%';
-
-    const dot = sd.playerType
-      ? `<div class="seat-type-dot" style="background:${TYPE_COLOR[sd.playerType]}"></div>`
-      : '';
-
-    el.innerHTML = `<div class="seat-inner">
-      ${dot}
-      <div class="seat-num">${i}</div>
-      <div class="seat-vpip" style="color:${color}">${pctStr}</div>
-      <div class="seat-hands">${seatVpip(sd).hands}h</div>
-    </div>`;
-    wrap.appendChild(el);
-  }
+function setType(type) {
+  currentType = type;
+  document.getElementById('btn-income').className = 'type-toggle-btn' + (type === 'income' ? ' active-income' : '');
+  document.getElementById('btn-expense').className = 'type-toggle-btn' + (type === 'expense' ? ' active-expense' : '');
+  const firstCat = CATEGORIES[type][0].id;
+  selectedCat = firstCat;
+  renderCategoryGrid();
+  document.getElementById('submitBtn').className = `submit-btn ${type}-mode`;
 }
 
-function selectSeat(num) {
-  state.selectedSeat = num;
-  save();
-  buildTable();
-  renderDetail();
+function renderCategoryGrid() {
+  const cats = CATEGORIES[currentType];
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = cats.map(c => `
+    <button class="cat-btn${selectedCat === c.id ? ' sel-' + currentType : ''}" onclick="selectCat('${c.id}')">
+      <span class="cat-icon">${c.icon}</span>${c.label}
+    </button>
+  `).join('');
 }
 
-// --- Detail panel ---
-function renderDetail() {
-  const seat = state.selectedSeat;
-  const sd = state.seats[seat];
-  document.getElementById('detailSeatNum').textContent = seat;
-  document.getElementById('detailName').value = sd.name;
-
-  const { hands, vpip, pct } = seatVpip(sd);
-  document.getElementById('detailVpipPct').textContent = pct === null ? '-' : pct + '%';
-  document.getElementById('detailVpipPct').style.color = vpipColor(pct);
-  document.getElementById('detailHands').textContent = hands;
-  document.getElementById('detailVpipCount').textContent = vpip;
-
-  // type buttons
-  document.querySelectorAll('.type-btn').forEach(btn => {
-    btn.className = 'type-btn';
-    if (btn.dataset.type === sd.playerType) {
-      btn.className = `type-btn sel-${sd.playerType}`;
-    }
-  });
-
-  // pos chips
-  const posRow = document.getElementById('posRow');
-  posRow.innerHTML = POSITIONS.map(pos => {
-    const pd = sd.positions[pos];
-    const pp = pd.hands === 0 ? '' : ` ${Math.round(pd.vpip/pd.hands*100)}%`;
-    return `<div class="pos-chip${pos === sd.selectedPos ? ' active' : ''}" onclick="selectPos('${pos}')">${pos}${pp}</div>`;
-  }).join('');
+function selectCat(id) {
+  selectedCat = id;
+  renderCategoryGrid();
 }
 
-function selectType(type) {
-  const sd = state.seats[state.selectedSeat];
-  sd.playerType = sd.playerType === type ? null : type;
-  save();
-  buildTable();
-  renderDetail();
-}
+function addRecord() {
+  const amt = parseInt(document.getElementById('amountInput').value, 10);
+  if (!amt || amt <= 0) { showFlash('金額を入力してください'); return; }
+  const date = document.getElementById('dateInput').value;
+  if (!date) { showFlash('日付を選択してください'); return; }
 
-function selectPos(pos) {
-  state.seats[state.selectedSeat].selectedPos = pos;
-  save();
-  renderDetail();
-}
-
-function record(action) {
-  const sd = state.seats[state.selectedSeat];
-  const pos = sd.positions[sd.selectedPos];
-  pos.hands++;
-  if (action !== 'fold') pos.vpip++;
-
-  // advance to next seat (wrap around)
-  const next = state.selectedSeat === SEAT_COUNT ? 1 : state.selectedSeat + 1;
-  state.selectedSeat = next;
-
-  save();
-  buildTable();
-  renderDetail();
-  // flash
-  const map = { call: '.btn-call', raise: '.btn-raise', fold: '.btn-fold' };
-  const el = document.querySelector(map[action]);
-  el.style.filter = 'brightness(1.5)';
-  setTimeout(() => el.style.filter = '', 180);
-}
-
-// --- Name input ---
-document.getElementById('detailName').addEventListener('input', e => {
-  state.seats[state.selectedSeat].name = e.target.value;
-  save();
-  buildTable();
-});
-
-// --- Summary ---
-function renderSummary() {
-  const grid = document.getElementById('summaryGrid');
-  grid.innerHTML = Array.from({ length: SEAT_COUNT }, (_, i) => {
-    const seat = i + 1;
-    const sd = state.seats[seat];
-    const { hands, pct } = seatVpip(sd);
-    const color = vpipColor(pct);
-    const pctStr = pct === null ? '-' : pct + '%';
-    const typeLabel = sd.playerType || '';
-    const typeCls = sd.playerType ? `sel-${sd.playerType}` : '';
-    const isSelected = seat === state.selectedSeat;
-    return `<div class="summary-card${isSelected ? ' selected' : ''}" onclick="goToSeat(${seat})">
-      <div class="sc-top">
-        <div class="sc-num">${seat}</div>
-        ${sd.playerType ? `<div class="sc-type" style="color:${TYPE_COLOR[sd.playerType]}">${typeLabel}</div>` : ''}
-      </div>
-      <div class="sc-name">${sd.name || '—'}</div>
-      <div class="sc-vpip" style="color:${color}">${pctStr}</div>
-      <div class="sc-hands">${hands}h</div>
-    </div>`;
-  }).join('');
-}
-
-function goToSeat(seat) {
-  selectSeat(seat);
-  showPage('page-table', 'tab-table');
-}
-
-// --- Save session ---
-function saveSession() {
-  let hasData = false;
-  for (let i = 1; i <= SEAT_COUNT; i++) {
-    if (seatVpip(state.seats[i]).hands > 0) { hasData = true; break; }
-  }
-  if (!hasData) { alert('データがありません'); return; }
-  if (!confirm('現在のテーブルデータを保存しますか？')) return;
-
-  const record = {
+  const rec = {
     id: Date.now(),
-    date: new Date().toLocaleDateString('ja-JP'),
-    seats: JSON.parse(JSON.stringify(state.seats))
+    type: currentType,
+    category: selectedCat,
+    amount: amt,
+    date,
+    memo: document.getElementById('memoInput').value.trim()
   };
-  archives.unshift(record);
-  localStorage.setItem('vpip_archives_v2', JSON.stringify(archives));
-  alert('保存しました');
+  records.unshift(rec);
+  saveRecords();
+
+  document.getElementById('amountInput').value = '';
+  document.getElementById('memoInput').value = '';
+  showFlash('追加しました ✓');
+  renderAll();
 }
 
-function resetTable() {
-  if (!confirm('テーブル全体をリセットしますか？')) return;
-  state = {
-    selectedSeat: 1,
-    seats: Object.fromEntries(Array.from({ length: SEAT_COUNT }, (_, i) => [i + 1, makeSeat()]))
-  };
-  save();
-  buildTable();
-  renderDetail();
+function deleteRecord(id) {
+  if (!confirm('削除しますか？')) return;
+  records = records.filter(r => r.id !== id);
+  saveRecords();
+  renderAll();
 }
 
-// --- Archives ---
-function renderArchives() {
-  const list = document.getElementById('archiveList');
-  if (archives.length === 0) {
-    list.innerHTML = '<div class="empty-state">保存されたデータがありません</div>';
+function monthRecords(ym) {
+  return records.filter(r => r.date.startsWith(ym));
+}
+
+function calcBalance(recs) {
+  let income = 0, expense = 0;
+  recs.forEach(r => r.type === 'income' ? (income += r.amount) : (expense += r.amount));
+  return { income, expense, balance: income - expense };
+}
+
+function renderBalanceBar(el, ym) {
+  const { income, expense, balance } = calcBalance(monthRecords(ym));
+  const sign = balance >= 0 ? '+' : '';
+  el.innerHTML = `
+    <div class="balance-item">
+      <div class="balance-val bal-income">${fmtAmt(income)}</div>
+      <div class="balance-lbl">収入</div>
+    </div>
+    <div class="balance-divider"></div>
+    <div class="balance-item">
+      <div class="balance-val bal-expense">${fmtAmt(expense)}</div>
+      <div class="balance-lbl">支出</div>
+    </div>
+    <div class="balance-divider"></div>
+    <div class="balance-item">
+      <div class="balance-val bal-total" style="color:${balance >= 0 ? 'var(--green)' : 'var(--red)'}">${sign}${fmtAmt(balance)}</div>
+      <div class="balance-lbl">収支</div>
+    </div>
+  `;
+}
+
+function renderHistory() {
+  const recs = monthRecords(currentMonth).sort((a, b) => b.date.localeCompare(a.date));
+  renderBalanceBar(document.getElementById('historyBalance'), currentMonth);
+
+  const list = document.getElementById('historyList');
+  if (recs.length === 0) {
+    list.innerHTML = '<div class="empty-state">この月の記録はありません</div>';
     return;
   }
-  list.innerHTML = archives.map(a => {
-    const seatRows = Array.from({ length: SEAT_COUNT }, (_, i) => {
-      const seat = i + 1;
-      const sd = a.seats[seat];
-      if (!sd) return '';
-      const { hands, vpip, pct } = seatVpip(sd);
-      if (hands === 0) return '';
-      const color = vpipColor(pct);
-      const typeBadge = sd.playerType
-        ? `<span class="aseat-type" style="background:${TYPE_COLOR[sd.playerType]}22;color:${TYPE_COLOR[sd.playerType]}">${sd.playerType}</span>`
-        : '';
-      const posDetail = POSITIONS.map(pos => {
-        const pd = sd.positions[pos];
-        if (!pd || pd.hands === 0) return '';
-        return `${pos}:${Math.round(pd.vpip/pd.hands*100)}%(${pd.hands}h)`;
-      }).filter(Boolean).join(' ');
-      return `<div class="archive-seat-row">
-        <div class="aseat-num">${seat}</div>
-        <div class="aseat-name">${sd.name || '—'}</div>
-        ${typeBadge}
-        <div class="aseat-vpip" style="color:${color}">${pct}%</div>
-        <div class="aseat-hands">${hands}h</div>
-        ${posDetail ? `<div class="pos-detail" style="flex-basis:100%;margin-left:28px">${posDetail}</div>` : ''}
-      </div>`;
-    }).filter(Boolean).join('');
 
-    return `<div class="archive-card">
-      <div class="archive-header">
-        <div>
-          <div class="archive-title">セッション</div>
-          <div class="archive-date">${a.date}</div>
-        </div>
-        <button class="archive-delete" onclick="deleteArchive(${a.id})">🗑</button>
+  list.innerHTML = recs.map(r => {
+    const cat = CAT_MAP[r.category] || { label: r.category, icon: '?' };
+    const d = r.date.split('-');
+    const dateStr = `${Number(d[1])}/${Number(d[2])}`;
+    return `<div class="record-card">
+      <div class="record-icon-wrap ${r.type}"><span>${cat.icon}</span></div>
+      <div class="record-info">
+        <div class="record-cat">${cat.label}</div>
+        <div class="record-memo">${r.memo || dateStr}</div>
+        ${r.memo ? `<div class="record-date">${dateStr}</div>` : ''}
       </div>
-      <div class="archive-seats">${seatRows || '<div style="color:var(--text2);font-size:12px">データなし</div>'}</div>
+      <div class="record-amount ${r.type}">${r.type === 'income' ? '+' : '-'}${fmtAmt(r.amount)}</div>
+      <button class="record-delete" onclick="deleteRecord(${r.id})">🗑</button>
     </div>`;
   }).join('');
 }
 
-function deleteArchive(id) {
-  if (!confirm('削除しますか？')) return;
-  archives = archives.filter(a => a.id !== id);
-  localStorage.setItem('vpip_archives_v2', JSON.stringify(archives));
-  renderArchives();
+function renderSummary() {
+  renderBalanceBar(document.getElementById('summaryBalance'), currentMonth);
+
+  const recs = monthRecords(currentMonth);
+
+  // Category breakdown
+  function renderCatSection(type, el, title) {
+    const filtered = recs.filter(r => r.type === type);
+    const total = filtered.reduce((s, r) => s + r.amount, 0);
+    const bycat = {};
+    filtered.forEach(r => { bycat[r.category] = (bycat[r.category] || 0) + r.amount; });
+    const sorted = Object.entries(bycat).sort((a, b) => b[1] - a[1]);
+
+    if (sorted.length === 0) { el.innerHTML = ''; return; }
+
+    const rows = sorted.map(([id, amt]) => {
+      const cat = CAT_MAP[id] || { label: id, icon: '?' };
+      const pct = total > 0 ? (amt / total * 100).toFixed(0) : 0;
+      return `<div class="cat-summary-row">
+        <div class="cat-summary-icon">${cat.icon}</div>
+        <div class="cat-summary-info">
+          <div class="cat-summary-name">${cat.label}</div>
+          <div class="cat-summary-bar-wrap">
+            <div class="cat-summary-bar ${type}" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <div class="cat-summary-amount ${type}">${fmtAmt(amt)}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="section-title">${title}</div>${rows}`;
+  }
+
+  renderCatSection('expense', document.getElementById('summaryExpense'), '支出カテゴリ');
+  renderCatSection('income', document.getElementById('summaryIncome'), '収入カテゴリ');
+
+  // Poker summary
+  const pokerEl = document.getElementById('summaryPoker');
+  const pokerWin = recs.filter(r => r.category === 'poker_win').reduce((s, r) => s + r.amount, 0);
+  const pokerLose = recs.filter(r => r.category === 'poker_lose').reduce((s, r) => s + r.amount, 0);
+  const pokerNet = pokerWin - pokerLose;
+  if (pokerWin > 0 || pokerLose > 0) {
+    const netColor = pokerNet >= 0 ? 'var(--green)' : 'var(--red)';
+    const netSign = pokerNet >= 0 ? '+' : '';
+    pokerEl.innerHTML = `<div class="section-title">🃏 ポーカー収支</div>
+      <div class="balance-bar" style="margin-bottom:0">
+        <div class="balance-item"><div class="balance-val bal-income">${fmtAmt(pokerWin)}</div><div class="balance-lbl">勝ち</div></div>
+        <div class="balance-divider"></div>
+        <div class="balance-item"><div class="balance-val bal-expense">${fmtAmt(pokerLose)}</div><div class="balance-lbl">負け</div></div>
+        <div class="balance-divider"></div>
+        <div class="balance-item"><div class="balance-val" style="color:${netColor};font-size:20px;font-weight:800">${netSign}${fmtAmt(pokerNet)}</div><div class="balance-lbl">収支</div></div>
+      </div>`;
+  } else {
+    pokerEl.innerHTML = '';
+  }
+
+  // Monthly chart (past 6 months)
+  const months = [];
+  const [cy, cm] = currentMonth.split('-').map(Number);
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(cy, cm - 1 - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+
+  const maxVal = months.reduce((mx, ym) => {
+    const { income, expense } = calcBalance(monthRecords(ym));
+    return Math.max(mx, income, expense);
+  }, 1);
+
+  const chart = document.getElementById('monthlyChart');
+  chart.innerHTML = months.map(ym => {
+    const { income, expense } = calcBalance(monthRecords(ym));
+    const ih = Math.round(income / maxVal * 100);
+    const eh = Math.round(expense / maxVal * 100);
+    const label = ym.split('-')[1] + '月';
+    return `<div class="month-bar-group">
+      <div class="month-bars">
+        <div class="month-bar income" style="height:${ih}px"></div>
+        <div class="month-bar expense" style="height:${eh}px"></div>
+      </div>
+      <div class="month-label">${label}</div>
+    </div>`;
+  }).join('');
 }
 
-// --- Navigation ---
+function renderAll() {
+  document.getElementById('headerMonth').textContent = fmtMonth(currentMonth);
+  renderHistory();
+  renderSummary();
+}
+
 function showPage(id, tabId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById(tabId).classList.add('active');
-  if (id === 'page-summary') renderSummary();
-  if (id === 'page-archives') renderArchives();
+}
+
+let flashTimer;
+function showFlash(msg) {
+  let el = document.getElementById('flash');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'flash';
+    Object.assign(el.style, {
+      position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+      background: '#222', color: '#fff', padding: '10px 20px', borderRadius: '20px',
+      fontSize: '14px', fontWeight: '600', zIndex: '999', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+      transition: 'opacity 0.3s', pointerEvents: 'none'
+    });
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+}
+
+// ===== TUTORIAL =====
+const TUTORIAL_STEPS = [
+  {
+    icon: '💰',
+    title: '家計簿へようこそ',
+    body: '収入・支出を記録して<br>お金の流れを一目で管理できます。',
+    tip: '<b>こんなことができます</b><br>✓ 給与・ポーカー収支・日々の支出を記録<br>✓ OLIVEのCSVを一括インポート<br>✓ 月別・カテゴリ別に集計',
+  },
+  {
+    icon: '✏️',
+    title: '収支を記録する',
+    body: '<b>「入力」タブ</b>から記録します。<br>収入か支出を選び、金額・カテゴリ・日付を入れて「追加する」をタップ。',
+    tip: '<b>カテゴリ例</b><br>💼 給与　🃏 ポーカー勝ち／負け<br>🍬 お菓子　👕 洋服　🍜 食費　など',
+  },
+  {
+    icon: '📥',
+    title: 'OLIVEから一括取込',
+    body: '<b>「↑ OLIVE」ボタン</b>でCSVを読み込むと、明細が自動で取り込まれます。',
+    tip: '<b>CSVの取得方法</b><br>① SMBCダイレクト → 入出金明細 → CSV出力<br>② OLIVEアプリ → 明細 → ダウンロード<br>③ 三井住友カード → 利用明細 → CSV<br><br>カテゴリは店名から自動判定されます。',
+  },
+  {
+    icon: '📊',
+    title: '集計を確認する',
+    body: '<b>「集計」タブ</b>で月ごとの収支・カテゴリ別内訳・過去6ヶ月の推移グラフが見られます。',
+    tip: '<b>ヘッダーの ‹ › </b>で月を切り替え\n<br><b>「一覧」タブ</b>では各記録の削除も可能',
+  },
+  {
+    icon: '📱',
+    title: 'ホーム画面に追加する',
+    body: 'ブラウザのメニューから<b>「ホーム画面に追加」</b>すると、アプリのように起動できます。',
+    tip: '<b>iPhone (Safari)</b><br>① 下のシェアボタン □↑ をタップ<br>② 「ホーム画面に追加」を選択<br><br><b>Android (Chrome)</b><br>① 右上の ⋮ メニューをタップ<br>② 「ホーム画面に追加」を選択',
+  },
+];
+
+let tutorialStep = 0;
+
+function openTutorial(step = 0) {
+  tutorialStep = step;
+  renderTutorial();
+  document.getElementById('tutorialOverlay').style.display = 'flex';
+}
+
+function closeTutorial() {
+  document.getElementById('tutorialOverlay').style.display = 'none';
+  localStorage.setItem('kakeibo_tutorial_done', '1');
+}
+
+function renderTutorial() {
+  const s = TUTORIAL_STEPS[tutorialStep];
+  const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+  const dots = TUTORIAL_STEPS.map((_, i) =>
+    `<div class="tutorial-dot${i === tutorialStep ? ' active' : ''}"></div>`
+  ).join('');
+  document.getElementById('tutorialCard').innerHTML = `
+    <div class="tutorial-step-dots">${dots}</div>
+    <div class="tutorial-icon">${s.icon}</div>
+    <div class="tutorial-title">${s.title}</div>
+    <div class="tutorial-body">${s.body}</div>
+    <div class="tutorial-tip">${s.tip}</div>
+    <div class="tutorial-actions">
+      ${tutorialStep === 0
+        ? `<button class="tutorial-skip" onclick="closeTutorial()">スキップ</button>`
+        : `<button class="tutorial-skip" onclick="tutorialStep--;renderTutorial()">‹ 戻る</button>`
+      }
+      <button class="tutorial-next${isLast ? ' last' : ''}" onclick="${isLast ? 'closeTutorial()' : 'tutorialStep++;renderTutorial()'}">
+        ${isLast ? '✓ 始める' : '次へ ›'}
+      </button>
+    </div>`;
+}
+
+// ===== CSV IMPORT =====
+const AUTO_CAT_RULES = [
+  // Income
+  { re: /給与|給料|賞与|ボーナス/,               type: 'income',  cat: 'salary' },
+  { re: /ポーカー|POKER|poker|カジノ|CASINO/,    type: 'income',  cat: 'poker_win' },
+  { re: /配当|分配|利息|利子/,                   type: 'income',  cat: 'invest' },
+  // Snack / Food
+  { re: /ファミリーマート|ファミマ|FamilyMart|FAMILYMART/, type: 'expense', cat: 'snack' },
+  { re: /セブンイレブン|セブン-イレブン|7-ELEVEN|7-11|SEVEN/i, type: 'expense', cat: 'snack' },
+  { re: /ローソン|LAWSON/i,                      type: 'expense', cat: 'snack' },
+  { re: /ミニストップ|デイリーヤマザキ|ポプラ/,   type: 'expense', cat: 'snack' },
+  { re: /スーパー|イオン|マックスバリュ|ライフ|西友|ヨーカドー|まいばすけっと|オーケー|業務スーパー|ピアゴ|コープ/, type: 'expense', cat: 'food' },
+  { re: /マクドナルド|ＭＣＤ|MCD|すき家|吉野家|松屋|サイゼリヤ|ガスト|デニーズ|ドトール|スタバ|スターバック|カフェ|レストラン|居酒屋|焼肉|ラーメン|寿司|うどん|そば/, type: 'expense', cat: 'food' },
+  // Transport
+  { re: /ＪＲ|JR|メトロ|東急|小田急|京王|西武|東武|相鉄|京成|南海|近鉄|阪急|阪神|電車|バス|SUICA|PASMO|Suica|Pasmo|スイカ|パスモ|ＩＣカード/, type: 'expense', cat: 'transport' },
+  { re: /ＥＮＥＯＳ|ENEOS|出光|IDEMITSU|シェル|コスモ|エネオス|ガソリン|エッソ/, type: 'expense', cat: 'transport' },
+  { re: /Uber|UBER|ウーバー|タクシー|DiDi|DIDI|ディーディー/i, type: 'expense', cat: 'transport' },
+  // Housing / Utility
+  { re: /家賃|管理費|駐車場|マンション|アパート/, type: 'expense', cat: 'housing' },
+  { re: /電気|東電|ＴＥＰＣＯ|TEPCO|東京電力|ガス|東京ガス|水道|電力|電灯/, type: 'expense', cat: 'utility' },
+  { re: /ドコモ|DOCOMO|au|ＡＵ|ソフトバンク|SoftBank|SOFTBANK|楽天モバイル|携帯|スマホ|通信|NTT/, type: 'expense', cat: 'utility' },
+  // Medical
+  { re: /ドラッグ|マツキヨ|マツモトキヨシ|ウェルシア|ツルハ|スギ薬局|薬局|クリニック|病院|医院|歯科|眼科|整形/, type: 'expense', cat: 'medical' },
+  // Clothing
+  { re: /ユニクロ|UNIQLO|ＧＵ(?!ＧＵ)|^GU|ジーユー|ZARA|Ｈ＆Ｍ|H&M|無印良品|MUJI|洋服|アパレル|ファッション/, type: 'expense', cat: 'clothing' },
+  // Daily / Entertainment
+  { re: /Amazon|AMAZON|アマゾン|楽天(?!モバイル)|RAKUTEN|ヤフー|Yahoo|YAHOO|ホームセンター|コーナン|カインズ|ニトリ/, type: 'expense', cat: 'daily' },
+  { re: /映画|シネマ|Netflix|NETFLIX|Spotify|SPOTIFY|ゲーム|PlayStation|PLAYSTATION|ニンテンドー|Nintendo|Hulu/, type: 'expense', cat: 'enjoy' },
+];
+
+function guessCategory(desc, type) {
+  for (const rule of AUTO_CAT_RULES) {
+    if (rule.re.test(desc) && rule.type === type) return rule.cat;
+  }
+  return type === 'income' ? 'other_in' : 'other_ex';
+}
+
+let importRows = [];
+
+function openImport() {
+  document.getElementById('importModal').style.display = 'flex';
+  document.getElementById('importStep1').style.display = 'block';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('csvFile').value = '';
+  importRows = [];
+}
+function closeImport() { document.getElementById('importModal').style.display = 'none'; }
+function overlayClose(e) { if (e.target === document.getElementById('importModal')) closeImport(); }
+
+function handleCSVFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let text = e.target.result;
+    // Try Shift-JIS decode if result looks garbled (non-UTF8 safe check)
+    if (/�/.test(text)) {
+      const r2 = new FileReader();
+      r2.onload = e2 => parseAndPreview(e2.target.result);
+      r2.readAsText(file, 'Shift_JIS');
+      return;
+    }
+    parseAndPreview(text);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function cleanNum(s) {
+  if (!s) return 0;
+  return parseInt(s.replace(/[,，\s]/g, ''), 10) || 0;
+}
+
+function parseDate(s) {
+  // Accept YYYY/MM/DD, YYYY-MM-DD, YYYY.MM.DD
+  const m = s.replace(/[.．]/g, '/').match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (!m) return null;
+  return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+}
+
+function detectFormat(headers) {
+  const h = headers.join(',');
+  // Credit card format
+  if (/ご利用日|利用日/.test(h)) return 'card';
+  // Bank format
+  if (/取引日|お取引/.test(h)) return 'bank';
+  // Generic fallback: guess by column count
+  return headers.length >= 4 ? 'bank' : 'unknown';
+}
+
+function parseAndPreview(text) {
+  // Normalize line endings and remove BOM
+  const lines = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+  if (lines.length < 2) { showFlash('データが見つかりません'); return; }
+
+  const headers = parseCSVLine(lines[0]);
+  const fmt = detectFormat(headers);
+  importRows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.every(c => !c)) continue;
+
+    let date, desc, debit = 0, credit = 0;
+
+    if (fmt === 'card') {
+      // ご利用日, ご利用店名等, ご利用者, 支払区分, ご利用金額(円), ...
+      date  = parseDate(cols[0]);
+      desc  = cols[1] || '';
+      debit = cleanNum(cols[4] || cols[5] || '');
+    } else {
+      // お取引日, お取引内容, お支払い金額, お預かり金額, 差引残高
+      date   = parseDate(cols[0]);
+      desc   = cols[1] || '';
+      debit  = cleanNum(cols[2]);
+      credit = cleanNum(cols[3]);
+    }
+
+    if (!date) continue;
+    // Skip rows with no amount
+    if (!debit && !credit) continue;
+
+    // Normalize full-width chars in description
+    desc = desc.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).trim();
+
+    if (credit > 0) {
+      importRows.push({ date, desc, type: 'income', amount: credit, cat: guessCategory(desc, 'income'), skip: false });
+    }
+    if (debit > 0) {
+      importRows.push({ date, desc, type: 'expense', amount: debit, cat: guessCategory(desc, 'expense'), skip: false });
+    }
+  }
+
+  if (importRows.length === 0) { showFlash('取り込めるデータがありませんでした'); return; }
+
+  renderImportPreview();
+  document.getElementById('importStep1').style.display = 'none';
+  document.getElementById('importStep2').style.display = 'block';
+}
+
+function renderImportPreview() {
+  const incomeCount = importRows.filter(r => !r.skip && r.type === 'income').length;
+  const expenseCount = importRows.filter(r => !r.skip && r.type === 'expense').length;
+  document.getElementById('importSummaryBar').innerHTML =
+    `<div><span>合計 </span><b>${importRows.length}件</b></div>
+     <div><span>収入 </span><b style="color:var(--green)">${incomeCount}件</b></div>
+     <div><span>支出 </span><b style="color:var(--red)">${expenseCount}件</b></div>`;
+
+  const allCats = [...CATEGORIES.income, ...CATEGORIES.expense];
+  const catOptions = allCats.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+
+  const rows = importRows.map((r, i) => {
+    const skipClass = r.skip ? ' skip-row' : '';
+    const amtHtml = r.type === 'income'
+      ? `<td class="td-amt-in">+¥${r.amount.toLocaleString()}</td>`
+      : `<td class="td-amt-out">-¥${r.amount.toLocaleString()}</td>`;
+    const selOpts = allCats.map(c => `<option value="${c.id}"${c.id === r.cat ? ' selected' : ''}>${c.icon} ${c.label}</option>`).join('');
+    return `<tr class="${skipClass}" id="irow-${i}">
+      <td class="td-skip"><input type="checkbox" ${r.skip ? '' : 'checked'} onchange="toggleSkip(${i},this.checked)"></td>
+      <td class="td-date">${r.date.slice(5)}</td>
+      <td class="td-desc" title="${r.desc}">${r.desc}</td>
+      ${amtHtml}
+      <td><select onchange="setImportCat(${i},this.value)">${selOpts}</select></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('importTableEl').innerHTML = `
+    <thead><tr>
+      <th>✓</th><th>日付</th><th>内容</th><th>金額</th><th>カテゴリ</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>`;
+}
+
+function toggleSkip(i, checked) {
+  importRows[i].skip = !checked;
+  document.getElementById(`irow-${i}`).className = checked ? '' : 'skip-row';
+  renderImportSummaryBar();
+}
+
+function setImportCat(i, val) { importRows[i].cat = val; }
+
+function renderImportSummaryBar() {
+  const inc = importRows.filter(r => !r.skip && r.type === 'income').length;
+  const exp = importRows.filter(r => !r.skip && r.type === 'expense').length;
+  document.getElementById('importSummaryBar').innerHTML =
+    `<div><span>合計 </span><b>${inc + exp}件</b></div>
+     <div><span>収入 </span><b style="color:var(--green)">${inc}件</b></div>
+     <div><span>支出 </span><b style="color:var(--red)">${exp}件</b></div>`;
+}
+
+function executeImport() {
+  const toAdd = importRows.filter(r => !r.skip);
+  if (toAdd.length === 0) { showFlash('インポートする項目がありません'); return; }
+
+  const existing = new Set(records.map(r => `${r.date}|${r.amount}|${r.type}`));
+  let added = 0, skipped = 0;
+
+  toAdd.forEach(r => {
+    const key = `${r.date}|${r.amount}|${r.type}`;
+    if (existing.has(key)) { skipped++; return; }
+    records.push({ id: Date.now() + added, type: r.type, category: r.cat, amount: r.amount, date: r.date, memo: r.desc });
+    existing.add(key);
+    added++;
+  });
+
+  // Sort records by date desc
+  records.sort((a, b) => b.date.localeCompare(a.date));
+  saveRecords();
+  renderAll();
+  closeImport();
+  showFlash(`${added}件インポート完了${skipped > 0 ? `（重複${skipped}件スキップ）` : ''} ✓`);
 }
 
 // Init
-load();
-buildTable();
-renderDetail();
+(function init() {
+  const today = new Date();
+  document.getElementById('dateInput').value =
+    `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  renderCategoryGrid();
+  renderAll();
+  if (!localStorage.getItem('kakeibo_tutorial_done')) openTutorial(0);
+})();
 </script>
+<!-- TUTORIAL -->
+<div id="tutorialOverlay" class="tutorial-overlay" style="display:none">
+  <div class="tutorial-card" id="tutorialCard"></div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div id="importModal" class="modal-overlay" style="display:none" onclick="overlayClose(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📥 OLIVEからインポート</div>
+      <button class="modal-close" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="importStep1">
+        <div class="dropzone" id="dropzone"
+          onclick="document.getElementById('csvFile').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="event.preventDefault();this.classList.remove('drag-over');handleCSVFile(event.dataTransfer.files[0])">
+          <div class="dropzone-icon">📂</div>
+          <div class="dropzone-text">CSVファイルを選択またはドロップ</div>
+          <div class="dropzone-sub">SMBC / OLIVEからエクスポートしたCSV</div>
+        </div>
+        <input type="file" id="csvFile" accept=".csv,.CSV" style="display:none" onchange="handleCSVFile(this.files[0])">
+        <div class="import-hint">
+          <b>CSVの取得方法</b><br>
+          ① SMBCダイレクト → 入出金明細 → CSV出力<br>
+          ② OLIVEアプリ → 明細 → ダウンロード<br>
+          ③ 三井住友カード → 利用明細 → CSVダウンロード<br><br>
+          <b>対応フォーマット</b>：銀行口座明細・クレジットカード明細
+        </div>
+      </div>
+      <div id="importStep2" style="display:none">
+        <div class="import-summary" id="importSummaryBar"></div>
+        <div style="overflow-x:auto">
+          <table class="import-table" id="importTableEl"></table>
+        </div>
+        <button class="import-btn" onclick="executeImport()">インポートする</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
