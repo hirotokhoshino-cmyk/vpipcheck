@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ポーカー議事録</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1e2530;
+    --surface3: #252d3a;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --purple: #bc8cff;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --border: #30363d;
+    --suit-s: #c9d1d9;
+    --suit-h: #f85149;
+    --suit-d: #58a6ff;
+    --suit-c: #3fb950;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 18px; font-weight: 800; white-space: nowrap; }
+  .session-name-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    text-align: center;
+    min-width: 0;
+    border-bottom: 1px dashed var(--border);
+    padding: 2px 4px;
+  }
+  .session-name-input:focus { border-color: var(--accent); }
+  .header-actions { display: flex; gap: 5px; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .icon-btn.primary { border-color: var(--accent); color: var(--accent); }
+  .icon-btn.primary:hover { background: rgba(88,166,255,0.1); }
+
+  /* ── Nav ── */
+  nav {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 0;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text2);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { flex: 1; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Section / Label ── */
+  .section-label {
+    font-size: 10px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 6px;
+  }
+  .section { margin-bottom: 14px; }
+
+  /* ── Form elements ── */
+  .form-wrap { padding: 14px 16px; }
+  .field-group { margin-bottom: 14px; }
+  label.field-label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 5px; font-weight: 600; }
+
+  input[type=text], textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input[type=text]::placeholder, textarea::placeholder { color: var(--text2); }
+
+  .input-sm { font-size: 13px; padding: 7px 10px; }
+
+  /* ── Position chips ── */
+  .pos-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pos-chip {
+    padding: 6px 11px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .pos-chip.active {
+    border-color: var(--accent);
+    background: rgba(88,166,255,0.15);
+    color: var(--accent);
+  }
+
+  /* ── Card display ── */
+  .card-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 34px;
+    padding: 6px 10px;
+    background: var(--surface3);
+    border-radius: 8px;
+    align-items: center;
+    margin-top: 5px;
+  }
+  .card-badge {
+    display: inline-flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: monospace;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+  .card-badge .suit { font-size: 12px; }
+  .card-badge.s { color: var(--suit-s); border-color: #444d56; }
+  .card-badge.h { color: var(--suit-h); border-color: #8b2a27; }
+  .card-badge.d { color: var(--suit-d); border-color: #2a5a8b; }
+  .card-badge.c { color: var(--suit-c); border-color: #2a6b3f; }
+  .board-sep { color: var(--text2); font-size: 10px; padding: 0 2px; }
+  .card-hint { font-size: 10px; color: var(--text2); }
+
+  /* ── Result toggle ── */
+  .result-row { display: flex; gap: 8px; align-items: center; }
+  .result-toggle { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .result-btn {
+    padding: 8px 18px;
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .result-btn.win.active  { background: rgba(63,185,80,0.2);  color: var(--green); }
+  .result-btn.loss.active { background: rgba(248,81,73,0.2);   color: var(--red); }
+  .amount-input { width: 110px; flex: none; }
+
+  /* ── Tags ── */
+  .tag-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag-chip {
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .tag-chip.active {
+    border-color: var(--purple);
+    background: rgba(188,140,255,0.15);
+    color: var(--purple);
+  }
+
+  /* ── Add button ── */
+  .btn-add {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #0d1117;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity 0.1s, transform 0.1s;
+  }
+  .btn-add:active { opacity: 0.75; transform: scale(0.98); }
+
+  /* ── Hand list ── */
+  .hand-list { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .hand-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .hand-card:hover { border-color: var(--accent); }
+  .hand-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .hand-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    min-width: 28px;
+  }
+  .hand-pos-badge {
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: var(--accent);
+  }
+  .hand-cards-inline { display: flex; gap: 3px; flex-wrap: wrap; }
+  .hand-result {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .hand-result.win  { background: rgba(63,185,80,0.15);  color: var(--green); }
+  .hand-result.loss { background: rgba(248,81,73,0.15);   color: var(--red); }
+  .hand-body {
+    padding: 0 12px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    display: none;
+  }
+  .hand-body.open { display: block; }
+  .hand-board { margin-bottom: 8px; }
+  .hand-commentary {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+  }
+  .hand-actions-text {
+    font-size: 11px;
+    color: var(--text2);
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+  .hand-tags-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+  .hand-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(188,140,255,0.15);
+    color: var(--purple);
+  }
+  .hand-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+  .hand-del-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .hand-del-btn:hover { border-color: var(--red); color: var(--red); }
+  .hand-edit-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); font-size: 14px; }
+
+  /* ── Notes tab ── */
+  .notes-wrap { padding: 14px 16px; }
+  .learning-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .learning-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .learning-item-text { flex: 1; }
+  .item-del {
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .item-del:hover { color: var(--red); }
+  .add-item-row { display: flex; gap: 6px; }
+  .add-item-row input { flex: 1; }
+  .btn-add-item {
+    padding: 9px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-add-item:hover { background: var(--surface3); }
+
+  /* ── Export tab ── */
+  .export-wrap { padding: 14px 16px; }
+  .export-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 12px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--text);
+    max-height: 420px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+  .btn-copy {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: var(--green);
+    color: #0d1117;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: opacity 0.15s;
+  }
+  .btn-copy:active { opacity: 0.75; }
+  .btn-save-session {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .btn-new-session {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 14px;
+  }
+
+  /* ── Archives section in export ── */
+  .archive-section { margin-top: 10px; }
+  .archive-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .archive-info { flex: 1; }
+  .archive-name { font-size: 14px; font-weight: 700; }
+  .archive-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .archive-load {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .archive-del {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 5px;
+  }
+  .archive-del:hover { color: var(--red); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #0d1117;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📋</div>
+  <input class="session-name-input" id="sessionNameInput" type="text" placeholder="セッション名">
+  <div class="header-actions">
+    <button class="icon-btn primary" onclick="saveSession()">保存</button>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" id="tab-add"    onclick="showPage('page-add','tab-add')">➕ 追加</div>
+  <div class="tab"        id="tab-hands"  onclick="showPage('page-hands','tab-hands')">🃏 ハンド</div>
+  <div class="tab"        id="tab-notes"  onclick="showPage('page-notes','tab-notes')">📝 メモ</div>
+  <div class="tab"        id="tab-export" onclick="showPage('page-export','tab-export')">📤 出力</div>
+</nav>
+
+<main>
+  <!-- ===== TAB: ADD HAND ===== -->
+  <div id="page-add" class="page active">
+    <div class="form-wrap">
+
+      <!-- Position -->
+      <div class="field-group">
+        <label class="field-label">ヒーローポジション</label>
+        <div class="pos-chips" id="heroPosList"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">相手ポジション（任意）</label>
+        <div class="pos-chips" id="villainPosList"></div>
+      </div>
+
+      <!-- Hole cards -->
+      <div class="field-group">
+        <label class="field-label">ホールカード</label>
+        <input class="input-sm" type="text" id="holeCardsInput" placeholder="例: Ah Kd" oninput="renderCards('holeCardsDisplay','holeCardsInput')">
+        <div class="card-display" id="holeCardsDisplay"><span class="card-hint">カードを入力（Ah Kd / Ts 9c など）</span></div>
+      </div>
+
+      <!-- Board -->
+      <div class="field-group">
+        <label class="field-label">ボード</label>
+        <div style="display:flex;gap:6px;margin-bottom:5px">
+          <input class="input-sm" type="text" id="flopInput" placeholder="フロップ: Jh Td 2c" style="flex:3" oninput="renderBoardDisplay()">
+          <input class="input-sm" type="text" id="turnInput"  placeholder="ターン"  style="flex:1" oninput="renderBoardDisplay()">
+          <input class="input-sm" type="text" id="riverInput" placeholder="リバー"  style="flex:1" oninput="renderBoardDisplay()">
+        </div>
+        <div class="card-display" id="boardDisplay"><span class="card-hint">フロップ → ターン → リバー</span></div>
+      </div>
+
+      <!-- Preflop action -->
+      <div class="field-group">
+        <label class="field-label">プリフロップアクション</label>
+        <textarea id="preflopInput" rows="2" placeholder="例: UTG raise 3BB → BTN 3bet 9BB → BB 4bet 22BB → fold"></textarea>
+      </div>
+
+      <!-- Postflop action -->
+      <div class="field-group">
+        <label class="field-label">ポストフロップアクション</label>
+        <textarea id="postflopInput" rows="3" placeholder="フロップ: チェック → BBベット1/2P → コール&#10;ターン: Hero ベット2/3P → コール&#10;リバー: オールイン → コール"></textarea>
+      </div>
+
+      <!-- Commentary -->
+      <div class="field-group">
+        <label class="field-label">解説・コメント ⭐</label>
+        <textarea id="commentaryInput" rows="4" placeholder="このハンドのポイント、判断の根拠、改善点など…"></textarea>
+      </div>
+
+      <!-- Result -->
+      <div class="field-group">
+        <label class="field-label">結果</label>
+        <div class="result-row">
+          <div class="result-toggle">
+            <button class="result-btn win"  id="resultWin"  onclick="setResult('win')">WIN</button>
+            <button class="result-btn loss" id="resultLoss" onclick="setResult('loss')">LOSS</button>
+          </div>
+          <input class="input-sm amount-input" type="text" id="amountInput" placeholder="例: 120BB">
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="field-group">
+        <label class="field-label">タグ</label>
+        <div class="tag-chips" id="tagChips"></div>
+      </div>
+
+      <button class="btn-add" onclick="addHand()">＋ ハンドを追加</button>
+    </div>
+  </div>
+
+  <!-- ===== TAB: HAND LIST ===== -->
+  <div id="page-hands" class="page">
+    <div class="hand-list" id="handList"></div>
+  </div>
+
+  <!-- ===== TAB: NOTES ===== -->
+  <div id="page-notes" class="page">
+    <div class="notes-wrap">
+      <div class="field-group">
+        <label class="field-label">日付</label>
+        <input type="text" id="sessionDateInput" placeholder="例: 2026-06-12">
+      </div>
+      <div class="field-group">
+        <label class="field-label">場所・ゲーム</label>
+        <input type="text" id="sessionVenueInput" placeholder="例: オンライン NL50, ライブ1/2">
+      </div>
+      <div class="field-group">
+        <label class="field-label">参加者・相手の傾向</label>
+        <input type="text" id="sessionParticipantsInput" placeholder="例: TAGメイン、1人LAGあり">
+      </div>
+      <div class="field-group">
+        <label class="field-label">今日のテーマ</label>
+        <input type="text" id="sessionThemeInput" placeholder="例: 3betポットでのCベット戦略">
+      </div>
+      <hr class="divider">
+      <div class="field-group">
+        <label class="field-label">全体メモ</label>
+        <textarea id="sessionNotesInput" rows="4" placeholder="セッション全体を通じての気づきや観察など"></textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">学習ポイント</label>
+        <div class="learning-list" id="learningList"></div>
+        <div class="add-item-row">
+          <input type="text" id="newLearningInput" placeholder="学んだこと" onkeydown="if(event.key==='Enter')addLearning()">
+          <button class="btn-add-item" onclick="addLearning()">追加</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">次回への課題</label>
+        <div class="learning-list" id="nextStepList"></div>
+        <div class="add-item-row">
+          <input type="text" id="newNextStepInput" placeholder="次に試すこと" onkeydown="if(event.key==='Enter')addNextStep()">
+          <button class="btn-add-item" onclick="addNextStep()">追加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: EXPORT ===== -->
+  <div id="page-export" class="page">
+    <div class="export-wrap">
+      <div class="section-label">プレビュー</div>
+      <div class="export-preview" id="exportPreview"></div>
+      <button class="btn-copy" onclick="copyToClipboard()">クリップボードにコピー</button>
+      <button class="btn-save-session" onclick="saveSession()">セッションを保存</button>
+      <button class="btn-new-session" onclick="newSession()">新規セッション</button>
+      <hr class="divider">
+      <div class="section-label">保存済みセッション</div>
+      <div id="archiveList"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Constants ───────────────────────────────────────────────────
+const POSITIONS = ['UTG','UTG+1','MP','HJ','CO','BTN','SB','BB'];
+const TAGS = ['バリューベット','ブラフ','コール系','フォールド','スポット','BTNvsBB','3betポット','ミス','スタディポイント','レンジアドバンテージ'];
+const SUIT_INFO = {
+  s: { sym: '♠', cls: 's' },
+  h: { sym: '♥', cls: 'h' },
+  d: { sym: '♦', cls: 'd' },
+  c: { sym: '♣', cls: 'c' }
+};
+const RANK_MAP = { a:'A', k:'K', q:'Q', j:'J', t:'T', '2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9' };
+const SUIT_SYM = { s:'♠', h:'♥', d:'♦', c:'♣' };
+
+// ─── State ───────────────────────────────────────────────────────
+function newSessionObj() {
+  return {
+    id: Date.now(),
+    name: '',
+    date: new Date().toLocaleDateString('ja-JP'),
+    venue: '',
+    participants: '',
+    theme: '',
+    notes: '',
+    learnings: [],
+    nextSteps: [],
+    hands: []
+  };
+}
+
+let session = JSON.parse(localStorage.getItem('poker_minutes_current') || 'null') || newSessionObj();
+let archives = JSON.parse(localStorage.getItem('poker_minutes_archives') || '[]');
+
+// Form UI state
+let heroPos = 'BTN';
+let villainPos = '';
+let resultType = null; // 'win' | 'loss'
+let activeTags = new Set();
+
+// ─── Persistence ─────────────────────────────────────────────────
+function persist() {
+  localStorage.setItem('poker_minutes_current', JSON.stringify(session));
+}
+
+// ─── Card parsing & rendering ────────────────────────────────────
+function parseCard(str) {
+  str = str.trim().toLowerCase();
+  if (str.length < 2) return null;
+  const rank = RANK_MAP[str[0]];
+  const suit = SUIT_INFO[str[str.length - 1]];
+  if (!rank || !suit) return null;
+  return { rank, suit };
+}
+
+function cardBadgeHTML(card) {
+  return `<span class="card-badge ${card.suit.cls}">${card.rank}<span class="suit">${card.suit.sym}</span></span>`;
+}
+
+function cardPlain(card) {
+  return card.rank + card.suit.sym;
+}
+
+function parseCards(input) {
+  return input.trim().split(/\s+/).map(parseCard).filter(Boolean);
+}
+
+function renderCards(displayId, inputId) {
+  const input = document.getElementById(inputId).value;
+  const display = document.getElementById(displayId);
+  const cards = parseCards(input);
+  if (cards.length === 0) {
+    display.innerHTML = '<span class="card-hint">カードを入力（Ah Kd / Ts 9c など）</span>';
+    return;
+  }
+  display.innerHTML = cards.map(cardBadgeHTML).join('');
+}
+
+function renderBoardDisplay() {
+  const flop  = parseCards(document.getElementById('flopInput').value);
+  const turn  = parseCards(document.getElementById('turnInput').value);
+  const river = parseCards(document.getElementById('riverInput').value);
+  const display = document.getElementById('boardDisplay');
+  if (flop.length === 0 && turn.length === 0 && river.length === 0) {
+    display.innerHTML = '<span class="card-hint">フロップ → ターン → リバー</span>';
+    return;
+  }
+  let parts = [];
+  if (flop.length)  parts.push(flop.map(cardBadgeHTML).join(''));
+  if (turn.length)  parts.push('<span class="board-sep">|</span>' + turn.map(cardBadgeHTML).join(''));
+  if (river.length) parts.push('<span class="board-sep">|</span>' + river.map(cardBadgeHTML).join(''));
+  display.innerHTML = parts.join(' ');
+}
+
+function boardPlainText() {
+  const flop  = parseCards(document.getElementById('flopInput').value);
+  const turn  = parseCards(document.getElementById('turnInput').value);
+  const river = parseCards(document.getElementById('riverInput').value);
+  let parts = [];
+  if (flop.length)  parts.push(flop.map(cardPlain).join(' '));
+  if (turn.length)  parts.push(turn.map(cardPlain).join(' '));
+  if (river.length) parts.push(river.map(cardPlain).join(' '));
+  return parts.join(' | ');
+}
+
+// ─── Position selector ───────────────────────────────────────────
+function buildPosList(containerId, stateVar, setter) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = POSITIONS.map(p =>
+    `<div class="pos-chip${stateVar === p ? ' active' : ''}" onclick="${setter}('${p}')">${p}</div>`
+  ).join('');
+  if (containerId === 'villainPosList') {
+    el.innerHTML = '<div class="pos-chip' + (villainPos === '' ? ' active' : '') + '" onclick="setVillain(\'\')">なし</div>' + el.innerHTML;
+  }
+}
+
+function setHeroPos(pos) { heroPos = pos; buildPosList('heroPosList', heroPos, 'setHeroPos'); }
+function setVillain(pos) { villainPos = pos; buildPosList('villainPosList', villainPos, 'setVillain'); }
+
+// ─── Result ──────────────────────────────────────────────────────
+function setResult(type) {
+  resultType = resultType === type ? null : type;
+  document.getElementById('resultWin').classList.toggle('active',  resultType === 'win');
+  document.getElementById('resultLoss').classList.toggle('active', resultType === 'loss');
+}
+
+// ─── Tag chips ───────────────────────────────────────────────────
+function buildTagChips() {
+  const el = document.getElementById('tagChips');
+  el.innerHTML = TAGS.map(t =>
+    `<div class="tag-chip${activeTags.has(t) ? ' active' : ''}" onclick="toggleTag('${t}')">${t}</div>`
+  ).join('');
+}
+
+function toggleTag(tag) {
+  if (activeTags.has(tag)) activeTags.delete(tag);
+  else activeTags.add(tag);
+  buildTagChips();
+}
+
+// ─── Add hand ────────────────────────────────────────────────────
+function addHand() {
+  const holeCards = document.getElementById('holeCardsInput').value.trim();
+  const flop      = document.getElementById('flopInput').value.trim();
+  const turn      = document.getElementById('turnInput').value.trim();
+  const river     = document.getElementById('riverInput').value.trim();
+  const preflop   = document.getElementById('preflopInput').value.trim();
+  const postflop  = document.getElementById('postflopInput').value.trim();
+  const commentary= document.getElementById('commentaryInput').value.trim();
+  const amount    = document.getElementById('amountInput').value.trim();
+
+  if (!holeCards && !commentary) {
+    showToast('ホールカードまたは解説を入力してください', true);
+    return;
+  }
+
+  const hand = {
+    id: Date.now(),
+    num: session.hands.length + 1,
+    heroPos,
+    villainPos,
+    holeCards,
+    flop, turn, river,
+    preflop, postflop, commentary,
+    result: resultType ? { type: resultType, amount } : null,
+    tags: [...activeTags],
+    open: false
+  };
+
+  session.hands.push(hand);
+  persist();
+
+  // Reset form (except positions)
+  ['holeCardsInput','flopInput','turnInput','riverInput','preflopInput','postflopInput','commentaryInput','amountInput']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('holeCardsDisplay').innerHTML = '<span class="card-hint">カードを入力（Ah Kd / Ts 9c など）</span>';
+  document.getElementById('boardDisplay').innerHTML = '<span class="card-hint">フロップ → ターン → リバー</span>';
+  resultType = null;
+  document.getElementById('resultWin').classList.remove('active');
+  document.getElementById('resultLoss').classList.remove('active');
+  activeTags.clear();
+  buildTagChips();
+
+  showToast(`ハンド #${hand.num} を追加しました`);
+}
+
+// ─── Hand list rendering ─────────────────────────────────────────
+function renderHandList() {
+  const el = document.getElementById('handList');
+  if (session.hands.length === 0) {
+    el.innerHTML = '<div class="empty-state">ハンドがまだありません<br>追加タブからハンドを記録してください</div>';
+    return;
+  }
+
+  el.innerHTML = [...session.hands].reverse().map(hand => {
+    const hCards = parseCards(hand.holeCards);
+    const fCards = parseCards(hand.flop);
+    const tCards = parseCards(hand.turn);
+    const rCards = parseCards(hand.river);
+
+    const resultHTML = hand.result
+      ? `<span class="hand-result ${hand.result.type}">${hand.result.type === 'win' ? 'WIN' : 'LOSS'}${hand.result.amount ? ' ' + hand.result.amount : ''}</span>`
+      : '';
+
+    const posLabel = hand.villainPos ? `${hand.heroPos} vs ${hand.villainPos}` : hand.heroPos;
+
+    let boardHTML = '';
+    if (fCards.length || tCards.length || rCards.length) {
+      let parts = [];
+      if (fCards.length) parts.push(fCards.map(cardBadgeHTML).join(''));
+      if (tCards.length) parts.push('<span class="board-sep">|</span>' + tCards.map(cardBadgeHTML).join(''));
+      if (rCards.length) parts.push('<span class="board-sep">|</span>' + rCards.map(cardBadgeHTML).join(''));
+      boardHTML = `<div class="hand-board"><div class="card-display" style="margin-top:0">${parts.join(' ')}</div></div>`;
+    }
+
+    const preflopHTML = hand.preflop ? `<div class="hand-actions-text" style="margin-bottom:4px"><strong style="color:var(--text2);font-size:10px">PF:</strong> ${hand.preflop}</div>` : '';
+    const postflopHTML = hand.postflop ? `<div class="hand-actions-text" style="margin-bottom:8px"><strong style="color:var(--text2);font-size:10px">PF後:</strong> ${hand.postflop}</div>` : '';
+    const commentaryHTML = hand.commentary ? `<div class="hand-commentary">${hand.commentary}</div>` : '';
+    const tagsHTML = hand.tags.length ? `<div class="hand-tags-row">${hand.tags.map(t => `<span class="hand-tag">${t}</span>`).join('')}</div>` : '';
+
+    const isOpen = hand.open;
+
+    return `<div class="hand-card" id="hc-${hand.id}">
+      <div class="hand-card-header" onclick="toggleHand(${hand.id})">
+        <div class="hand-num">#${hand.num}</div>
+        <div class="hand-pos-badge">${posLabel}</div>
+        <div class="hand-cards-inline">${hCards.map(cardBadgeHTML).join('')}</div>
+        ${resultHTML}
+      </div>
+      <div class="hand-body${isOpen ? ' open' : ''}" id="hb-${hand.id}">
+        ${boardHTML}
+        ${preflopHTML}
+        ${postflopHTML}
+        ${commentaryHTML}
+        ${tagsHTML}
+      </div>
+      <div class="hand-card-footer" style="${isOpen ? '' : 'display:none'}" id="hf-${hand.id}">
+        <button class="hand-del-btn" onclick="deleteHand(${hand.id})">削除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHand(id) {
+  const hand = session.hands.find(h => h.id === id);
+  if (!hand) return;
+  hand.open = !hand.open;
+  persist();
+  const body = document.getElementById(`hb-${id}`);
+  const footer = document.getElementById(`hf-${id}`);
+  if (body) body.classList.toggle('open', hand.open);
+  if (footer) footer.style.display = hand.open ? '' : 'none';
+}
+
+function deleteHand(id) {
+  if (!confirm('このハンドを削除しますか？')) return;
+  session.hands = session.hands.filter(h => h.id !== id);
+  persist();
+  renderHandList();
+  showToast('削除しました');
+}
+
+// ─── Notes ───────────────────────────────────────────────────────
+function loadNotesForm() {
+  document.getElementById('sessionDateInput').value         = session.date;
+  document.getElementById('sessionVenueInput').value        = session.venue;
+  document.getElementById('sessionParticipantsInput').value = session.participants;
+  document.getElementById('sessionThemeInput').value        = session.theme;
+  document.getElementById('sessionNotesInput').value        = session.notes;
+  renderLearningList();
+  renderNextStepList();
+}
+
+function bindNotesInputs() {
+  document.getElementById('sessionDateInput').addEventListener('input', e => { session.date = e.target.value; persist(); });
+  document.getElementById('sessionVenueInput').addEventListener('input', e => { session.venue = e.target.value; persist(); });
+  document.getElementById('sessionParticipantsInput').addEventListener('input', e => { session.participants = e.target.value; persist(); });
+  document.getElementById('sessionThemeInput').addEventListener('input', e => { session.theme = e.target.value; persist(); });
+  document.getElementById('sessionNotesInput').addEventListener('input', e => { session.notes = e.target.value; persist(); });
+}
+
+function renderLearningList() {
+  const el = document.getElementById('learningList');
+  el.innerHTML = session.learnings.map((item, i) =>
+    `<div class="learning-item">
+      <div class="learning-item-text">・${item}</div>
+      <button class="item-del" onclick="removeLearning(${i})">×</button>
+    </div>`
+  ).join('');
+}
+
+function renderNextStepList() {
+  const el = document.getElementById('nextStepList');
+  el.innerHTML = session.nextSteps.map((item, i) =>
+    `<div class="learning-item">
+      <div class="learning-item-text">→ ${item}</div>
+      <button class="item-del" onclick="removeNextStep(${i})">×</button>
+    </div>`
+  ).join('');
+}
+
+function addLearning() {
+  const input = document.getElementById('newLearningInput');
+  if (!input.value.trim()) return;
+  session.learnings.push(input.value.trim());
+  input.value = '';
+  persist();
+  renderLearningList();
+}
+
+function removeLearning(i) {
+  session.learnings.splice(i, 1);
+  persist();
+  renderLearningList();
+}
+
+function addNextStep() {
+  const input = document.getElementById('newNextStepInput');
+  if (!input.value.trim()) return;
+  session.nextSteps.push(input.value.trim());
+  input.value = '';
+  persist();
+  renderNextStepList();
+}
+
+function removeNextStep(i) {
+  session.nextSteps.splice(i, 1);
+  persist();
+  renderNextStepList();
+}
+
+// ─── Export ──────────────────────────────────────────────────────
+function buildExportText() {
+  const name = session.name || 'ポーカー勉強会';
+  let out = `════════════════════════════\n`;
+  out += `　ポーカー議事録\n`;
+  out += `════════════════════════════\n`;
+  out += `セッション : ${name}\n`;
+  out += `日付       : ${session.date}\n`;
+  if (session.venue)        out += `場所/ゲーム: ${session.venue}\n`;
+  if (session.participants) out += `参加者傾向  : ${session.participants}\n`;
+  if (session.theme)        out += `テーマ     : ${session.theme}\n`;
+  out += '\n';
+
+  if (session.hands.length > 0) {
+    out += `────────────────────────────\n`;
+    out += `  ハンド記録 (${session.hands.length}ハンド)\n`;
+    out += `────────────────────────────\n\n`;
+
+    session.hands.forEach(hand => {
+      const posLabel = hand.villainPos ? `${hand.heroPos} vs ${hand.villainPos}` : hand.heroPos;
+      const hCards = parseCards(hand.holeCards).map(cardPlain).join(' ');
+      const board = [
+        parseCards(hand.flop).map(cardPlain).join(' '),
+        parseCards(hand.turn).map(cardPlain).join(' '),
+        parseCards(hand.river).map(cardPlain).join(' ')
+      ].filter(Boolean).join(' | ');
+
+      out += `【ハンド #${hand.num}】${posLabel}\n`;
+      if (hCards) out += `ホールカード: ${hCards}\n`;
+      if (board)  out += `ボード      : ${board}\n`;
+      if (hand.preflop) out += `プリフロップ: ${hand.preflop}\n`;
+      if (hand.postflop) out += `アクション  : ${hand.postflop}\n`;
+      if (hand.result) {
+        const r = hand.result;
+        out += `結果        : ${r.type === 'win' ? 'WIN' : 'LOSS'}${r.amount ? ' ' + r.amount : ''}\n`;
+      }
+      if (hand.tags.length) out += `タグ        : ${hand.tags.join(', ')}\n`;
+      if (hand.commentary) {
+        out += `\n💡 ${hand.commentary}\n`;
+      }
+      out += '\n';
+    });
+  }
+
+  if (session.notes) {
+    out += `────────────────────────────\n`;
+    out += `  全体メモ\n`;
+    out += `────────────────────────────\n`;
+    out += session.notes + '\n\n';
+  }
+
+  if (session.learnings.length > 0) {
+    out += `────────────────────────────\n`;
+    out += `  学習ポイント\n`;
+    out += `────────────────────────────\n`;
+    session.learnings.forEach(l => { out += `・${l}\n`; });
+    out += '\n';
+  }
+
+  if (session.nextSteps.length > 0) {
+    out += `────────────────────────────\n`;
+    out += `  次回への課題\n`;
+    out += `────────────────────────────\n`;
+    session.nextSteps.forEach(s => { out += `→ ${s}\n`; });
+    out += '\n';
+  }
+
+  out += `════════════════════════════\n`;
+  return out;
+}
+
+function renderExport() {
+  document.getElementById('exportPreview').textContent = buildExportText();
+  renderArchiveList();
+}
+
+function copyToClipboard() {
+  const text = buildExportText();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast('コピーしました！'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('コピーしました！');
+  }
+}
+
+// ─── Session management ──────────────────────────────────────────
+function saveSession() {
+  session.name = document.getElementById('sessionNameInput').value.trim() || 'セッション';
+  persist();
+
+  const idx = archives.findIndex(a => a.id === session.id);
+  const snapshot = JSON.parse(JSON.stringify(session));
+  if (idx >= 0) archives[idx] = snapshot;
+  else archives.unshift(snapshot);
+  localStorage.setItem('poker_minutes_archives', JSON.stringify(archives));
+  showToast('保存しました');
+  renderArchiveList();
+}
+
+function newSession() {
+  if (!confirm('新規セッションを開始しますか？\n（現在のセッションは保存済みでない場合、失われます）')) return;
+  session = newSessionObj();
+  persist();
+  document.getElementById('sessionNameInput').value = '';
+  loadNotesForm();
+  buildPosList('heroPosList', heroPos, 'setHeroPos');
+  buildPosList('villainPosList', villainPos, 'setVillain');
+  renderHandList();
+  renderExport();
+  showPage('page-add', 'tab-add');
+  showToast('新規セッション開始');
+}
+
+function loadArchive(id) {
+  if (!confirm('このセッションを読み込みますか？')) return;
+  const found = archives.find(a => a.id === id);
+  if (!found) return;
+  session = JSON.parse(JSON.stringify(found));
+  persist();
+  document.getElementById('sessionNameInput').value = session.name;
+  loadNotesForm();
+  renderHandList();
+  renderExport();
+  showPage('page-hands', 'tab-hands');
+  showToast('読み込みました');
+}
+
+function deleteArchive(id) {
+  if (!confirm('このセッションを削除しますか？')) return;
+  archives = archives.filter(a => a.id !== id);
+  localStorage.setItem('poker_minutes_archives', JSON.stringify(archives));
+  renderArchiveList();
+  showToast('削除しました');
+}
+
+function renderArchiveList() {
+  const el = document.getElementById('archiveList');
+  if (archives.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:30px 20px">保存済みセッションなし</div>';
+    return;
+  }
+  el.innerHTML = archives.map(a =>
+    `<div class="archive-item">
+      <div class="archive-info">
+        <div class="archive-name">${a.name || '無題'}</div>
+        <div class="archive-meta">${a.date}　${a.hands.length}ハンド${a.venue ? '　' + a.venue : ''}</div>
+      </div>
+      <button class="archive-load" onclick="loadArchive(${a.id})">読込</button>
+      <button class="archive-del" onclick="deleteArchive(${a.id})">🗑</button>
+    </div>`
+  ).join('');
+}
+
+// ─── Toast ───────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── Navigation ──────────────────────────────────────────────────
+function showPage(id, tabId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  if (id === 'page-hands')  renderHandList();
+  if (id === 'page-notes')  loadNotesForm();
+  if (id === 'page-export') renderExport();
+}
+
+// ─── Session name sync ───────────────────────────────────────────
+document.getElementById('sessionNameInput').addEventListener('input', e => {
+  session.name = e.target.value;
+  persist();
+});
+
+// ─── Init ────────────────────────────────────────────────────────
+function init() {
+  document.getElementById('sessionNameInput').value = session.name;
+  buildPosList('heroPosList', heroPos, 'setHeroPos');
+  buildPosList('villainPosList', villainPos, 'setVillain');
+  buildTagChips();
+  bindNotesInputs();
+  renderHandList();
+}
+
+init();
+</script>
+</body>
+</html>
